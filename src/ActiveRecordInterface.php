@@ -8,6 +8,7 @@
 namespace rabbit\activerecord;
 
 use rabbit\core\StaticInstanceInterface;
+use rabbit\db\ConnectionInterface;
 
 /**
  * ActiveRecordInterface.
@@ -467,5 +468,5 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * Returns the connection used by this AR class.
      * @return mixed the database connection used by this AR class.
      */
-    public static function getDb();
+    public static function getDb(): ConnectionInterface;
 }

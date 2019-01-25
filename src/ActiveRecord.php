@@ -7,13 +7,13 @@
 
 namespace rabbit\activerecord;
 
+use InvalidArgumentException;
 use rabbit\App;
 use rabbit\core\ObjectFactory;
 use rabbit\db\ConnectionInterface;
 use rabbit\db\Expression;
 use rabbit\db\StaleObjectException;
 use rabbit\db\TableSchema;
-use InvalidArgumentException;
 use rabbit\exception\InvalidConfigException;
 use rabbit\helper\ArrayHelper;
 use rabbit\helper\Inflector;
@@ -136,7 +136,7 @@ class ActiveRecord extends BaseActiveRecord
      * You may override this method if you want to use a different database connection.
      * @return ConnectionInterface the database connection used by this AR class.
      */
-    public static function getDb()
+    public static function getDb(): ConnectionInterface
     {
         return getDI('db')->getConnection();
     }
