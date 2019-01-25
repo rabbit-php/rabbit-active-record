@@ -1,0 +1,21 @@
+{
+  "name": "rabbit/active-record",
+  "description": "rabbit active-record base on yiisoft/active-record.remove the event and replace validator to respect validator",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "albert",
+      "email": "63851587@qq.com"
+    }
+  ],
+  "require": {
+    "rabbit/framework": "dev-master",
+    "rabbit/db": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "rabbit\\activerecord\\": "src/"
+    }
+  }
+}
