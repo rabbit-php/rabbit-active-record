@@ -12,6 +12,7 @@ use ArrayIterator;
 use ArrayObject;
 use IteratorAggregate;
 use rabbit\App;
+use rabbit\core\BaseObject;
 use rabbit\core\StaticInstanceInterface;
 use rabbit\core\StaticInstanceTrait;
 use rabbit\exception\InvalidArgumentException;
@@ -55,7 +56,7 @@ use Respect\Validation\Validator;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-class Model implements StaticInstanceInterface, IteratorAggregate, ArrayAccess, Arrayable
+class Model extends BaseObject implements StaticInstanceInterface, IteratorAggregate, ArrayAccess, Arrayable
 {
     use ArrayableTrait;
     use StaticInstanceTrait;
