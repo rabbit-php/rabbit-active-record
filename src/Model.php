@@ -518,7 +518,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
     public function onUnsafeAttribute($name, $value)
     {
         if (getDI('debug')) {
-            App::debug("Failed to set unsafe attribute '$name' in '" . get_class($this) . "'.", __METHOD__);
+            App::debug("Failed to set unsafe attribute '$name' in '" . get_class($this) . "'.");
         }
     }
 
