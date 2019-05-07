@@ -468,5 +468,5 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * Returns the connection used by this AR class.
      * @return mixed the database connection used by this AR class.
      */
-    public static function getDb(): ConnectionInterface;
+    public static function getDb();
 }
