@@ -12,7 +12,7 @@
   "require": {
     "rabbit/framework": "dev-master",
     "rabbit/db": "dev-master",
-    "rabbit/model": "dev-master"
+    "respect/validation": "^1.1"
   },
   "autoload": {
     "psr-4": {
