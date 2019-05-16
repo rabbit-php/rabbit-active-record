@@ -117,7 +117,7 @@ trait ArrayableTrait
      * @param bool $recursive whether to recursively return array representation of embedded objects.
      * @return array the array representation of the object
      */
-    public function toArray(array $fields = [], array $expand = [], $recursive = true)
+    public function toArray(array $fields = [], array $expand = [], $recursive = true): array
     {
         $data = [];
         foreach ($this->resolveFields($fields, $expand) as $field => $definition) {
