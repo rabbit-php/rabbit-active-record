@@ -101,6 +101,10 @@ class ActiveRecord extends BaseActiveRecord
      * This is a shortcut of the expression: OP_INSERT | OP_UPDATE | OP_DELETE.
      */
     const OP_ALL = 0x07;
+    /**
+     * @var array
+     */
+    public $realation = [];
 
 
     /**
