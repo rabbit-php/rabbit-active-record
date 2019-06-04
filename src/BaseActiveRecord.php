@@ -1516,9 +1516,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     public function fields()
     {
         $fields = array_keys($this->_attributes);
-        if (empty($fields)) {
-            return parent::fields();
-        }
+        
         return array_combine($fields, $fields);
     }
 
