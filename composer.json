@@ -10,8 +10,8 @@
     }
   ],
   "require": {
-    "rabbit/framework": "dev-master",
-    "rabbit/db": "dev-master",
+    "rabbit/framework": "~0.1",
+    "rabbit/db": "~0.1",
     "respect/validation": "^1.1"
   },
   "autoload": {
