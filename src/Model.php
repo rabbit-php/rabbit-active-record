@@ -411,11 +411,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      */
     public function addError($attribute, $error = '')
     {
-        if (isset($this->_errors[$attribute]) && $this->_errors[$attribute] !== $error) {
-            $this->_errors[$attribute] = $this->_errors[$attribute] . BREAKS . $error;
-        } else {
-            $this->_errors[$attribute] = $error;
-        }
+        $this->_errors[$attribute][] = $error;
     }
 
     /**
