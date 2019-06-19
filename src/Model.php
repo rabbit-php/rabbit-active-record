@@ -18,7 +18,7 @@ use rabbit\exception\InvalidArgumentException;
 use rabbit\exception\InvalidConfigException;
 use rabbit\helper\Inflector;
 use ReflectionClass;
-use Respect\Validation\Validator;
+use Respect\Validation\Validatable;
 
 /**
  * Model is the base class for data models.
@@ -267,7 +267,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
         foreach ($this->rules() as $rule) {
             list($properties, $validator) = $rule;
             foreach ($properties as $property) {
-                if ($validator instanceof Validator) {
+                if ($validator instanceof Validatable) {
                     if (!$validator->validate($this->$property)) {
                         $this->addError($property, $validator->reportError($property)->getMessage());
                     }
