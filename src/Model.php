@@ -9,7 +9,6 @@ namespace rabbit\activerecord;
 
 use ArrayAccess;
 use ArrayIterator;
-use ArrayObject;
 use IteratorAggregate;
 use rabbit\App;
 use rabbit\core\BaseObject;
@@ -163,9 +162,9 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * as the form name. You may override it when the model is used in different forms.
      *
      * @return string the form name of this model class.
-     * @see load()
      * @throws InvalidConfigException when form is defined with anonymous class and `formName()` method is
      * not overridden.
+     * @see load()
      */
     public function formName()
     {
@@ -322,8 +321,6 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
     /**
      * Returns the errors for all attributes or a single attribute.
      * @param string $attribute attribute name. Use null to retrieve errors for all attributes.
-     * @property array An array of errors for all attributes. Empty array is returned if no error.
-     * The result is a two-dimensional array. See [[getErrors()]] for detailed description.
      * @return array errors for all attributes or the specified attribute. Empty array is returned if no error.
      * Note that when returning errors for all attributes, the result is a two-dimensional array, like the following:
      *
@@ -339,6 +336,8 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * ]
      * ```
      *
+     * @property array An array of errors for all attributes. Empty array is returned if no error.
+     * The result is a two-dimensional array. See [[getErrors()]] for detailed description.
      * @see getFirstErrors()
      * @see getFirstError()
      */
@@ -412,7 +411,11 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      */
     public function addError($attribute, $error = '')
     {
-        $this->_errors[$attribute][] = $error;
+        if (isset($this->_errors[$attribute]) && $this->_errors[$attribute] !== $error) {
+            $this->_errors[$attribute] = $this->_errors[$attribute] . BREAKS . $error;
+        } else {
+            $this->_errors[$attribute] = $error;
+        }
     }
 
     /**
