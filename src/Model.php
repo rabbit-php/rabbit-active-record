@@ -269,8 +269,11 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
             foreach ($properties as $property) {
                 if ($validator instanceof Validatable) {
                     if (!$validator->validate($this->$property)) {
-                        $this->addError($property, str_replace("These rules must pass for ", '',
-                            $validator->reportError($property)->getMessage()));
+                        $this->addError($property, str_replace(
+                            "These rules must pass for ",
+                            '',
+                            $validator->reportError($property)->getMessage()
+                        ));
                     }
                 } elseif (is_callable($validator)) {
                     $this->$property = call_user_func($validator, $this->$property);
