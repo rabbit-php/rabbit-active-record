@@ -1029,19 +1029,9 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     }
 
     /**
-     * Creates an active record instance.
-     *
-     * This method is called together with [[populateRecord()]] by [[ActiveQuery]].
-     * It is not meant to be used for creating new records directly.
-     *
-     * You may override this method if the instance being created
-     * depends on the row data to be populated into the record.
-     * For example, by creating a record based on the value of a column,
-     * you may implement the so-called single-table inheritance mapping.
-     * @param array $row row data to be populated into the record.
-     * @return static the newly created active record
+     * @return static
      */
-    public static function instantiate($row)
+    public static function instantiate()
     {
         return new static();
     }

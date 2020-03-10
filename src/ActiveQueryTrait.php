@@ -118,7 +118,7 @@ trait ActiveQueryTrait
             /* @var $class ActiveRecord */
             $class = $this->modelClass;
             foreach ($rows as $row) {
-                $model = $class::instantiate($row);
+                $model = $class::instantiate();
                 $modelClass = get_class($model);
                 $modelClass::populateRecord($model, $row);
                 $models[] = $model;

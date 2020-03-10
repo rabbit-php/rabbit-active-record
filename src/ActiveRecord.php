@@ -106,6 +106,15 @@ class ActiveRecord extends BaseActiveRecord
      */
     public $realation = [];
 
+    /**
+     * ActiveRecord constructor.
+     * @throws InvalidConfigException
+     */
+    public function __construct()
+    {
+        static::getTableSchema();
+    }
+
 
     /**
      * Loads default values from database table schema.
