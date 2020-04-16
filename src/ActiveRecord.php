@@ -323,10 +323,8 @@ class ActiveRecord extends BaseActiveRecord
      */
     public static function updateAllCounters($counters, $condition = '', $params = [])
     {
-        $n = 0;
         foreach ($counters as $name => $value) {
-            $counters[$name] = new Expression("[[$name]]+:bp{$n}", [":bp{$n}" => $value]);
-            $n++;
+            $counters[$name] = new Expression("[[$name]]+?", ["?" => $value]);
         }
         $command = static::getDb()->createCommand();
         $command->update(static::tableName(), $counters, $condition, $params);
