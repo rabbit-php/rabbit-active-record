@@ -102,14 +102,6 @@ class ActiveRecord extends BaseActiveRecord
      */
     const OP_ALL = 0x07;
 
-    /**
-     * ActiveRecord constructor.
-     * @throws InvalidConfigException
-     */
-    public function __construct()
-    {
-        static::getTableSchema();
-    }
 
     /**
      * @return array
@@ -380,7 +372,9 @@ class ActiveRecord extends BaseActiveRecord
      */
     public static function find()
     {
-        return ObjectFactory::createObject(ActiveQuery::class, ['modelClass' => get_called_class()], false);
+        $ar = ObjectFactory::createObject(ActiveQuery::class, ['modelClass' => get_called_class()], false);
+        static::getTableSchema();
+        return $ar;
     }
 
     /**
