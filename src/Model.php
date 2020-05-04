@@ -278,7 +278,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
                 } elseif (is_callable($validator)) {
                     $this->$property = call_user_func($validator, $this->$property);
                 } else {
-                    empty($this->$property) && $this->$property = $validator;
+                    $this->$property === null && $this->$property = $validator;
                 }
             }
         }
