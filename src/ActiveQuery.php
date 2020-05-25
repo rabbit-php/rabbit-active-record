@@ -10,6 +10,7 @@ namespace rabbit\activerecord;
 use rabbit\core\ObjectFactory;
 use rabbit\db\Command;
 use rabbit\db\ConnectionInterface;
+use rabbit\db\DbContext;
 use rabbit\db\Query;
 use rabbit\exception\InvalidConfigException;
 
@@ -183,6 +184,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
 
         $models = $this->createModels($rows);
+        DbContext::release();
         if (!empty($this->join) && $this->indexBy === null) {
             $models = $this->removeDuplicatedModels($models);
         }
@@ -202,9 +204,9 @@ class ActiveQuery extends Query implements ActiveQueryInterface
      * This method is mainly called when a join query is performed, which may cause duplicated rows being returned.
      *
      * @param array $models the models to be checked
-     * @throws InvalidConfigException if model primary key is empty
-     * @throws \rabbit\exception\InvalidConfigException
      * @return array the distinctive models
+     * @throws \rabbit\exception\InvalidConfigException
+     * @throws InvalidConfigException if model primary key is empty
      */
     private function removeDuplicatedModels($models)
     {
@@ -382,7 +384,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     public function joinWith($with, $eagerLoading = true, $joinType = 'LEFT JOIN')
     {
         $relations = [];
-        foreach ((array) $with as $name => $callback) {
+        foreach ((array)$with as $name => $callback) {
             if (is_int($name)) {
                 $name = $callback;
                 $callback = null;
