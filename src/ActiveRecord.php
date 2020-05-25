@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use rabbit\App;
 use rabbit\core\ObjectFactory;
 use rabbit\db\ConnectionInterface;
+use rabbit\db\DbContext;
 use rabbit\db\Expression;
 use rabbit\db\StaleObjectException;
 use rabbit\db\TableSchema;
@@ -134,7 +135,7 @@ class ActiveRecord extends BaseActiveRecord
                 $this->{$column->name} = $column->defaultValue;
             }
         }
-
+        DbContext::release();
         return $this;
     }
 
@@ -574,7 +575,7 @@ class ActiveRecord extends BaseActiveRecord
 
         $changedAttributes = array_fill_keys(array_keys($values), null);
         $this->setOldAttributes($values);
-
+        DbContext::release();
         return true;
     }
 

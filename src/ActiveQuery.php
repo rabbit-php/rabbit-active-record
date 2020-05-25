@@ -184,7 +184,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
 
         $models = $this->createModels($rows);
-        DbContext::release();
+
         if (!empty($this->join) && $this->indexBy === null) {
             $models = $this->removeDuplicatedModels($models);
         }
@@ -268,9 +268,9 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         $row = parent::one($db);
         if ($row !== false) {
             $models = $this->populate([$row]);
+            DbContext::release();
             return reset($models) ?: null;
         }
-
         return null;
     }
 
