@@ -555,6 +555,8 @@ class ActiveRecord extends BaseActiveRecord
         } catch (\Throwable $e) {
             $transaction->rollBack();
             throw $e;
+        } finally {
+            DbContext::release();
         }
     }
 
@@ -580,7 +582,6 @@ class ActiveRecord extends BaseActiveRecord
 
         $changedAttributes = array_fill_keys(array_keys($values), null);
         $this->setOldAttributes($values);
-        DbContext::release();
         return true;
     }
 
@@ -661,6 +662,8 @@ class ActiveRecord extends BaseActiveRecord
         } catch (\Throwable $e) {
             $transaction->rollBack();
             throw $e;
+        } finally {
+            DbContext::release();
         }
     }
 
