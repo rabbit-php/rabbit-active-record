@@ -103,6 +103,11 @@ class ActiveRecord extends BaseActiveRecord
      */
     const OP_ALL = 0x07;
 
+    public function __destruct()
+    {
+        DbContext::release();
+    }
+
     /**
      * @return array
      */
