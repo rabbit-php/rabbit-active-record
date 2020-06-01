@@ -11,7 +11,6 @@ use InvalidArgumentException;
 use rabbit\App;
 use rabbit\core\ObjectFactory;
 use rabbit\db\ConnectionInterface;
-use rabbit\db\DbContext;
 use rabbit\db\Expression;
 use rabbit\db\StaleObjectException;
 use rabbit\db\TableSchema;
@@ -103,11 +102,6 @@ class ActiveRecord extends BaseActiveRecord
      */
     const OP_ALL = 0x07;
 
-    public function __destruct()
-    {
-        DbContext::release();
-    }
-
     /**
      * @return array
      */
@@ -140,7 +134,6 @@ class ActiveRecord extends BaseActiveRecord
                 $this->{$column->name} = $column->defaultValue;
             }
         }
-        DbContext::release();
         return $this;
     }
 
@@ -377,9 +370,7 @@ class ActiveRecord extends BaseActiveRecord
      */
     public static function find()
     {
-        $ar = ObjectFactory::createObject(ActiveQuery::class, ['modelClass' => get_called_class()], false);
-        static::getTableSchema();
-        return $ar;
+        return ObjectFactory::createObject(ActiveQuery::class, ['modelClass' => get_called_class()], false);
     }
 
     /**
@@ -555,8 +546,6 @@ class ActiveRecord extends BaseActiveRecord
         } catch (\Throwable $e) {
             $transaction->rollBack();
             throw $e;
-        } finally {
-            DbContext::release();
         }
     }
 
@@ -662,8 +651,6 @@ class ActiveRecord extends BaseActiveRecord
         } catch (\Throwable $e) {
             $transaction->rollBack();
             throw $e;
-        } finally {
-            DbContext::release();
         }
     }
 
