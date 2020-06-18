@@ -44,20 +44,20 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     /**
      * @var array attribute values indexed by attribute names
      */
-    private $_attributes = [];
+    protected $_attributes = [];
     /**
      * @var array|null old attribute values indexed by attribute names.
      * This is `null` if the record [[isNewRecord|is new]].
      */
-    private $_oldAttributes;
+    protected $_oldAttributes;
     /**
      * @var array related models indexed by the relation names
      */
-    private $_related = [];
+    protected $_related = [];
     /**
      * @var array relation names indexed by their link attributes
      */
-    private $_relationsDependencies = [];
+    protected $_relationsDependencies = [];
 
 
     /**
