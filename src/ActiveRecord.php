@@ -145,7 +145,7 @@ class ActiveRecord extends BaseActiveRecord
      */
     public static function getDb(): ConnectionInterface
     {
-        return getDI('db')->getConnection();
+        return getDI('db')->get();
     }
 
     /**
