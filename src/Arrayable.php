@@ -1,11 +1,12 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\activerecord;
+namespace Rabbit\ActiveRecord;
 
 /**
  * Arrayable is the interface that should be implemented by classes who want to support customizable representation of their instances.
@@ -20,7 +21,7 @@ namespace rabbit\activerecord;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-interface Arrayable extends \rabbit\contract\Arrayable
+interface Arrayable extends \Rabbit\Base\Contract\ArrayAble
 {
     /**
      * Returns the list of fields that should be returned by default by [[toArray()]] when no specific fields are specified.
@@ -61,7 +62,7 @@ interface Arrayable extends \rabbit\contract\Arrayable
      * @return array the list of field names or field definitions.
      * @see toArray()
      */
-    public function fields();
+    public function fields(): array;
 
     /**
      * Returns the list of additional fields that can be returned by [[toArray()]] in addition to those listed in [[fields()]].
@@ -75,7 +76,7 @@ interface Arrayable extends \rabbit\contract\Arrayable
      * @see toArray()
      * @see fields()
      */
-    public function extraFields();
+    public function extraFields(): array;
 
     /**
      * Converts the object into an array.
@@ -88,5 +89,5 @@ interface Arrayable extends \rabbit\contract\Arrayable
      * @param bool $recursive whether to recursively return array representation of embedded objects.
      * @return array the array representation of the object
      */
-    public function toArray(array $fields = [], array $expand = [], $recursive = true): array;
+    public function toArray(array $fields = [], array $expand = [], bool $recursive = true): array;
 }

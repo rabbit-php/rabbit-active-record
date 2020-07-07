@@ -1,14 +1,14 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\activerecord;
+namespace Rabbit\ActiveRecord;
 
-use rabbit\contract\Arrayable;
-use rabbit\helper\ArrayHelper;
+use Rabbit\Base\Helper\ArrayHelper;
 
 /**
  * ArrayableTrait provides a common implementation of the [[Arrayable]] interface.
@@ -66,7 +66,7 @@ trait ArrayableTrait
      * @return array the list of field names or field definitions.
      * @see toArray()
      */
-    public function fields()
+    public function fields(): array
     {
         $fields = array_keys(ArrayHelper::getObjectVars($this));
         return array_combine($fields, $fields);
@@ -90,7 +90,7 @@ trait ArrayableTrait
      * @see toArray()
      * @see fields()
      */
-    public function extraFields()
+    public function extraFields(): array
     {
         return [];
     }

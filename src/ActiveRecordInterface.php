@@ -1,14 +1,14 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\activerecord;
-
-use rabbit\core\StaticInstanceInterface;
-use rabbit\db\ConnectionInterface;
+namespace Rabbit\ActiveRecord;
+use Rabbit\Base\Core\StaticInstanceInterface;
+use Rabbit\Pool\ConnectionInterface;
 
 /**
  * ActiveRecordInterface.
@@ -28,13 +28,13 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      *
      * @return string[] the primary key name(s) for this AR class.
      */
-    public static function primaryKey();
+    public static function primaryKey(): array;
 
     /**
      * Returns the list of all attribute names of the record.
      * @return array list of attribute names.
      */
-    public function attributes();
+    public function attributes(): array;
 
     /**
      * Returns the named attribute value.
@@ -44,7 +44,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * @return mixed the attribute value. `null` if the attribute is not set or does not exist.
      * @see hasAttribute()
      */
-    public function getAttribute($name);
+    public function getAttribute(string $name);
 
     /**
      * Sets the named attribute value.
@@ -52,14 +52,14 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * @param mixed $value the attribute value.
      * @see hasAttribute()
      */
-    public function setAttribute($name, $value);
+    public function setAttribute(string $name, $value): void;
 
     /**
      * Returns a value indicating whether the record has an attribute with the specified name.
      * @param string $name the name of the attribute
      * @return bool whether the record has an attribute with the specified name.
      */
-    public function hasAttribute($name);
+    public function hasAttribute(string $name): bool;
 
     /**
      * Returns the primary key value(s).
@@ -70,7 +70,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * is composite or `$asArray` is true. A string is returned otherwise (`null` will be returned if
      * the key value is `null`).
      */
-    public function getPrimaryKey($asArray = false);
+    public function getPrimaryKey(bool $asArray = false);
 
     /**
      * Returns the old primary key value(s).
@@ -80,21 +80,21 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * @param bool $asArray whether to return the primary key value as an array. If true,
      * the return value will be an array with column name as key and column value as value.
      * If this is `false` (default), a scalar value will be returned for non-composite primary key.
-     * @property mixed The old primary key value. An array (column name => column value) is
-     * returned if the primary key is composite. A string is returned otherwise (`null` will be
-     * returned if the key value is `null`).
      * @return mixed the old primary key value. An array (column name => column value) is returned if the primary key
      * is composite or `$asArray` is true. A string is returned otherwise (`null` will be returned if
      * the key value is `null`).
+     * @property mixed The old primary key value. An array (column name => column value) is
+     * returned if the primary key is composite. A string is returned otherwise (`null` will be
+     * returned if the key value is `null`).
      */
-    public function getOldPrimaryKey($asArray = false);
+    public function getOldPrimaryKey(bool $asArray = false);
 
     /**
      * Returns a value indicating whether the given set of attributes represents the primary key for this model.
      * @param array $keys the set of attributes to check
      * @return bool whether the given set of attributes represents the primary key for this model
      */
-    public static function isPrimaryKey($keys);
+    public static function isPrimaryKey(array $keys): bool;
 
     /**
      * Creates an [[ActiveQueryInterface]] instance for query purpose.
@@ -151,7 +151,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      *
      * @return ActiveQueryInterface the newly created [[ActiveQueryInterface]] instance.
      */
-    public static function find();
+    public static function find(): ActiveQueryInterface;
 
     /**
      * Returns a single active record model instance by a primary key or an array of column values.
@@ -282,7 +282,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * @param mixed $condition primary key value or a set of column values
      * @return array an array of ActiveRecord instance, or an empty array if nothing matches.
      */
-    public static function findAll($condition);
+    public static function findAll($condition): array;
 
     /**
      * Updates records using the provided attribute values and conditions.
@@ -295,12 +295,12 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      *
      * @param array $attributes attribute values (name-value pairs) to be saved for the record.
      * Unlike [[update()]] these are not going to be validated.
-     * @param array $condition the condition that matches the records that should get updated.
+     * @param string|array $condition the condition that matches the records that should get updated.
      * Please refer to [[QueryInterface::where()]] on how to specify this parameter.
      * An empty condition will match all records.
      * @return int the number of rows updated
      */
-    public static function updateAll($attributes, $condition = null);
+    public static function updateAll(array $attributes, $condition = ''): int;
 
     /**
      * Deletes records using the provided conditions.
@@ -317,7 +317,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * An empty condition will match all records.
      * @return int the number of rows deleted
      */
-    public static function deleteAll($condition = null);
+    public static function deleteAll($condition = null): int;
 
     /**
      * Saves the current record.
@@ -341,7 +341,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * meaning all attributes that are loaded from DB will be saved.
      * @return bool whether the saving succeeded (i.e. no validation errors occurred).
      */
-    public function save($runValidation = true, $attributeNames = null);
+    public function save(bool $runValidation = true, array $attributeNames = null): bool;
 
     /**
      * Inserts the record into the database using the attribute values of this record.
@@ -362,7 +362,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * meaning all attributes that are loaded from DB will be saved.
      * @return bool whether the attributes are valid and the record is inserted successfully.
      */
-    public function insert($runValidation = true, $attributes = null);
+    public function insert(bool $runValidation = true, array $attributes = null): bool;
 
     /**
      * Saves the changes to this active record into the database.
@@ -381,26 +381,26 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * will not be saved to the database and this method will return `false`.
      * @param array $attributeNames list of attributes that need to be saved. Defaults to `null`,
      * meaning all attributes that are loaded from DB will be saved.
-     * @return int|bool the number of rows affected, or `false` if validation fails
+     * @return int the number of rows affected, or `false` if validation fails
      * or updating process is stopped for other reasons.
      * Note that it is possible that the number of rows affected is 0, even though the
      * update execution is successful.
      */
-    public function update($runValidation = true, $attributeNames = null);
+    public function update(bool $runValidation = true, array $attributeNames = null): int;
 
     /**
      * Deletes the record from the database.
      *
-     * @return int|bool the number of rows deleted, or `false` if the deletion is unsuccessful for some reason.
+     * @return int the number of rows deleted, or `false` if the deletion is unsuccessful for some reason.
      * Note that it is possible that the number of rows deleted is 0, even though the deletion execution is successful.
      */
-    public function delete();
+    public function delete(): int;
 
     /**
      * Returns a value indicating whether the current record is new (not saved in the database).
      * @return bool whether the record is new and should be inserted when calling [[save()]].
      */
-    public function getIsNewRecord();
+    public function getIsNewRecord(): bool;
 
     /**
      * Returns a value indicating whether the given active record is the same as the current one.
@@ -408,7 +408,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * @param static $record record to compare to
      * @return bool whether the two active records refer to the same row in the same database table.
      */
-    public function equals($record);
+    public function equals(ActiveRecordInterface $record): bool;
 
     /**
      * Returns the relation object with the specified name.
@@ -419,7 +419,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * @param bool $throwException whether to throw exception if the relation does not exist.
      * @return ActiveQueryInterface the relational query object
      */
-    public function getRelation($name, $throwException = true);
+    public function getRelation($name, $throwException = true): ?ActiveQueryInterface;
 
     /**
      * Populates the named relation with the related records.
@@ -428,7 +428,7 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * @param ActiveRecordInterface|array|null $records the related records to be populated into the relation.
      * @since 2.0.8
      */
-    public function populateRelation($name, $records);
+    public function populateRelation(string $name, $records): void;
 
     /**
      * Establishes the relationship between two records.
@@ -443,12 +443,12 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * This method requires that the primary key value is not `null`.
      *
      * @param string $name the case sensitive name of the relationship, e.g. `orders` for a relation defined via `getOrders()` method.
-     * @param static $model the record to be linked with the current one.
+     * @param ActiveRecordInterface $model the record to be linked with the current one.
      * @param array $extraColumns additional column values to be saved into the junction table.
      * This parameter is only meaningful for a relationship involving a junction table
      * (i.e., a relation set with [[ActiveQueryInterface::via()]]).
      */
-    public function link($name, $model, $extraColumns = []);
+    public function link(string $name, ActiveRecordInterface $model, array $extraColumns = []): void;
 
     /**
      * Destroys the relationship between two records.
@@ -462,11 +462,11 @@ interface ActiveRecordInterface extends StaticInstanceInterface
      * If false, the model's foreign key will be set `null` and saved.
      * If true, the model containing the foreign key will be deleted.
      */
-    public function unlink($name, $model, $delete = false);
+    public function unlink(string $name, ActiveRecordInterface $model, bool $delete = false): void;
 
     /**
      * Returns the connection used by this AR class.
      * @return mixed the database connection used by this AR class.
      */
-    public static function getDb();
+    public static function getDb(): ConnectionInterface;
 }

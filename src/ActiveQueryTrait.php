@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\activerecord;
+namespace Rabbit\ActiveRecord;
+
+use Psr\SimpleCache\InvalidArgumentException;
+use Rabbit\Base\Exception\InvalidConfigException;
+use Throwable;
 
 /**
  * ActiveQueryTrait implements the common methods and properties for active record query classes.
@@ -19,16 +24,16 @@ trait ActiveQueryTrait
     /**
      * @var string the name of the ActiveRecord class.
      */
-    public $modelClass;
+    public ?string $modelClass;
     /**
      * @var array a list of relations that this query should be performed with
      */
-    public $with;
+    public ?array $with;
     /**
      * @var bool whether to return each record as an array. If false (default), an object
      * of [[modelClass]] will be created to represent each record.
      */
-    public $asArray;
+    public ?bool $asArray;
 
 
     /**
@@ -36,7 +41,7 @@ trait ActiveQueryTrait
      * @param bool $value whether to return the query results in terms of arrays instead of Active Records.
      * @return $this the query object itself
      */
-    public function asArray($value = true)
+    public function asArray(bool $value = true): self
     {
         $this->asArray = $value;
         return $this;
@@ -79,7 +84,7 @@ trait ActiveQueryTrait
      *
      * @return $this the query object itself
      */
-    public function with()
+    public function with(): self
     {
         $with = func_get_args();
         if (isset($with[0]) && is_array($with[0])) {
@@ -109,7 +114,7 @@ trait ActiveQueryTrait
      * @return array|ActiveRecord[]
      * @since 2.0.11
      */
-    protected function createModels($rows)
+    protected function createModels(array $rows): array
     {
         if ($this->asArray) {
             return $rows;
@@ -132,8 +137,11 @@ trait ActiveQueryTrait
      * @param array $with a list of relations that this query should be performed with. Please
      * refer to [[with()]] for details about specifying this parameter.
      * @param array|ActiveRecord[] $models the primary models (can be either AR instances or arrays)
+     * @throws InvalidArgumentException
+     * @throws InvalidConfigException
+     * @throws Throwable
      */
-    public function findWith($with, &$models)
+    public function findWith(array $with, array &$models): void
     {
         $primaryModel = reset($models);
         if (!$primaryModel instanceof ActiveRecordInterface) {
@@ -153,11 +161,11 @@ trait ActiveQueryTrait
     }
 
     /**
-     * @param ActiveRecord $model
+     * @param ActiveRecordInterface $model
      * @param array $with
      * @return ActiveQueryInterface[]
      */
-    private function normalizeRelations($model, $with)
+    private function normalizeRelations(ActiveRecordInterface $model, array $with): array
     {
         $relations = [];
         foreach ($with as $name => $callback) {

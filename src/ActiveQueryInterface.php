@@ -1,14 +1,15 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\activerecord;
+namespace Rabbit\ActiveRecord;
 
-use rabbit\db\ConnectionInterface;
-use rabbit\db\QueryInterface;
+use Rabbit\DB\QueryInterface;
+use Rabbit\Pool\ConnectionInterface;
 
 /**
  * ActiveQueryInterface defines the common interface to be implemented by active record query classes.
@@ -30,7 +31,7 @@ interface ActiveQueryInterface extends QueryInterface
      * @param bool $value whether to return the query results in terms of arrays instead of Active Records.
      * @return $this the query object itself
      */
-    public function asArray($value = true);
+    public function asArray(bool $value = true): self;
 
     /**
      * Executes query and returns a single row of result.
@@ -40,7 +41,7 @@ interface ActiveQueryInterface extends QueryInterface
      * the query result may be either an array or an ActiveRecord object. `null` will be returned
      * if the query results in nothing.
      */
-    public function one($db = null);
+    public function one(ConnectionInterface $db = null);
 
     /**
      * Sets the [[indexBy]] property.
@@ -59,7 +60,7 @@ interface ActiveQueryInterface extends QueryInterface
      *
      * @return $this the query object itself
      */
-    public function indexBy($column);
+    public function indexBy($column): self;
 
     /**
      * Specifies the relations with which this query should be performed.
@@ -90,7 +91,7 @@ interface ActiveQueryInterface extends QueryInterface
      *
      * @return $this the query object itself
      */
-    public function with();
+    public function with(): self;
 
     /**
      * Specifies the relation associated with the junction table for use in relational query.
@@ -99,7 +100,7 @@ interface ActiveQueryInterface extends QueryInterface
      * Its signature should be `function($query)`, where `$query` is the query to be customized.
      * @return $this the relation object itself.
      */
-    public function via($relationName, callable $callable = null);
+    public function via(string $relationName, callable $callable = null): self;
 
     /**
      * Finds the related records for the specified primary record.
@@ -108,5 +109,5 @@ interface ActiveQueryInterface extends QueryInterface
      * @param ActiveRecordInterface $model the primary model
      * @return mixed the related record(s)
      */
-    public function findFor($name, $model);
+    public function findFor(string $name, ActiveRecordInterface $model);
 }

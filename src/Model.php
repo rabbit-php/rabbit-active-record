@@ -1,24 +1,27 @@
 <?php
+declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
  * @license http://www.yiiframework.com/license/
  */
 
-namespace rabbit\activerecord;
+namespace Rabbit\ActiveRecord;
 
 use ArrayAccess;
 use ArrayIterator;
 use IteratorAggregate;
-use rabbit\App;
-use rabbit\core\BaseObject;
-use rabbit\core\StaticInstanceInterface;
-use rabbit\core\StaticInstanceTrait;
-use rabbit\exception\InvalidArgumentException;
-use rabbit\exception\InvalidConfigException;
-use rabbit\helper\Inflector;
+use Rabbit\Base\App;
+use Rabbit\Base\Core\BaseObject;
+use Rabbit\Base\Core\StaticInstanceInterface;
+use Rabbit\Base\Core\StaticInstanceTrait;
+use Rabbit\Base\Exception\InvalidArgumentException;
+use Rabbit\Base\Exception\InvalidConfigException;
+use Rabbit\Base\Helper\Inflector;
 use ReflectionClass;
+use ReflectionException;
 use Respect\Validation\Validatable;
+use Throwable;
 
 /**
  * Model is the base class for data models.
@@ -68,11 +71,11 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
     /**
      * @var array validation errors (attribute name => array of errors)
      */
-    private $_errors;
+    private array $_errors = [];
     /**
      * @var string current scenario
      */
-    private $_scenario = self::SCENARIO_DEFAULT;
+    private string $_scenario = self::SCENARIO_DEFAULT;
 
 
     /**
@@ -141,7 +144,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @return array validation rules
      * @see scenarios()
      */
-    public function rules()
+    public function rules(): array
     {
         return [];
     }
@@ -162,11 +165,12 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * as the form name. You may override it when the model is used in different forms.
      *
      * @return string the form name of this model class.
-     * @throws InvalidConfigException when form is defined with anonymous class and `formName()` method is
      * not overridden.
+     * @throws InvalidConfigException
+     * @throws ReflectionException
      * @see load()
      */
-    public function formName()
+    public function formName(): string
     {
         $reflector = new ReflectionClass($this);
         if ($reflector->isAnonymous()) {
@@ -180,8 +184,9 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * By default, this method returns all public non-static properties of the class.
      * You may override this method to change the default behavior.
      * @return array list of attribute names.
+     * @throws ReflectionException
      */
-    public function attributes()
+    public function attributes(): array
     {
         $class = new ReflectionClass($this);
         $names = [];
@@ -210,7 +215,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @return array attribute labels (name => label)
      * @see generateAttributeLabel()
      */
-    public function attributeLabels()
+    public function attributeLabels(): array
     {
         return [];
     }
@@ -230,7 +235,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @return array attribute hints (name => hint)
      * @since 2.0.4
      */
-    public function attributeHints()
+    public function attributeHints(): array
     {
         return [];
     }
@@ -251,14 +256,14 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * Errors found during the validation can be retrieved via [[getErrors()]],
      * [[getFirstErrors()]] and [[getFirstError()]].
      *
-     * @param string[]|string $attributeNames attribute name or list of attribute names that should be validated.
+     * @param string[] $attributeNames attribute name or list of attribute names that should be validated.
      * If this parameter is empty, it means any attribute listed in the applicable
      * validation rules should be validated.
      * @param bool $clearErrors whether to call [[clearErrors()]] before performing validation
      * @return bool whether the validation is successful without any error.
      * @throws InvalidArgumentException if the current scenario is unknown.
      */
-    public function validate($attributeNames = null, $clearErrors = true)
+    public function validate(array $attributeNames = null, bool $clearErrors = true)
     {
         if ($clearErrors) {
             $this->clearErrors();
@@ -293,7 +298,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @see generateAttributeLabel()
      * @see attributeLabels()
      */
-    public function getAttributeLabel($attribute)
+    public function getAttributeLabel(string $attribute): string
     {
         $labels = $this->attributeLabels();
         return $labels[$attribute] ?? $this->generateAttributeLabel($attribute);
@@ -306,7 +311,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @see attributeHints()
      * @since 2.0.4
      */
-    public function getAttributeHint($attribute)
+    public function getAttributeHint(string $attribute): string
     {
         $hints = $this->attributeHints();
         return $hints[$attribute] ?? '';
@@ -317,7 +322,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @param string|null $attribute attribute name. Use null to check all attributes.
      * @return bool whether there is any error.
      */
-    public function hasErrors($attribute = null)
+    public function hasErrors(string $attribute = null): bool
     {
         return $attribute === null ? !empty($this->_errors) : isset($this->_errors[$attribute]);
     }
@@ -345,7 +350,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @see getFirstErrors()
      * @see getFirstError()
      */
-    public function getErrors($attribute = null)
+    public function getErrors(string $attribute = null): array
     {
         if ($attribute === null) {
             return $this->_errors ?? [];
@@ -361,7 +366,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @see getErrors()
      * @see getFirstError()
      */
-    public function getFirstErrors()
+    public function getFirstErrors(): array
     {
         if (empty($this->_errors)) {
             return [];
@@ -384,7 +389,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @see getErrors()
      * @see getFirstErrors()
      */
-    public function getFirstError($attribute)
+    public function getFirstError(string $attribute): ?string
     {
         return isset($this->_errors[$attribute]) ? reset($this->_errors[$attribute]) : null;
     }
@@ -398,7 +403,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @see getFirstErrors()
      * @since 2.0.14
      */
-    public function getErrorSummary($showAllErrors)
+    public function getErrorSummary(bool $showAllErrors): array
     {
         $lines = [];
         $errors = $showAllErrors ? $this->getErrors() : $this->getFirstErrors();
@@ -413,7 +418,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @param string $attribute attribute name
      * @param string $error new error message
      */
-    public function addError($attribute, $error = '')
+    public function addError(string $attribute, string $error = ''): void
     {
         $this->_errors[$attribute][] = $error;
     }
@@ -426,7 +431,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * You may use the result of [[getErrors()]] as the value for this parameter.
      * @since 2.0.2
      */
-    public function addErrors(array $items)
+    public function addErrors(array $items): void
     {
         foreach ($items as $attribute => $errors) {
             if (is_array($errors)) {
@@ -443,7 +448,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * Removes errors for all attributes or a single attribute.
      * @param string $attribute attribute name. Use null to remove errors for all attributes.
      */
-    public function clearErrors($attribute = null)
+    public function clearErrors(string $attribute = null): void
     {
         if ($attribute === null) {
             $this->_errors = [];
@@ -460,7 +465,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @param string $name the column name
      * @return string the attribute label
      */
-    public function generateAttributeLabel($name)
+    public function generateAttributeLabel(string $name): string
     {
         return Inflector::camel2words($name, true);
     }
@@ -472,8 +477,9 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * If it is an array, only the attributes in the array will be returned.
      * @param array $except list of attributes whose value should NOT be returned.
      * @return array attribute values (name => value).
+     * @throws ReflectionException
      */
-    public function getAttributes($names = null, $except = [])
+    public function getAttributes(array $names = null, array $except = []): array
     {
         $values = [];
         if ($names === null) {
@@ -494,10 +500,11 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @param array $values attribute values (name => value) to be assigned to the model.
      * @param bool $safeOnly whether the assignments should only be done to the safe attributes.
      * A safe attribute is one that is associated with a validation rule in the current [[scenario]].
-     * @see safeAttributes()
+     * @throws ReflectionException
      * @see attributes()
+     * @see safeAttributes()
      */
-    public function setAttributes($values, $safeOnly = true)
+    public function setAttributes(array $values, bool $safeOnly = true): void
     {
         if (is_array($values)) {
             $attributes = array_flip($this->attributes());
@@ -517,8 +524,9 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * It does nothing otherwise.
      * @param string $name the unsafe attribute name
      * @param mixed $value the attribute value
+     * @throws Throwable
      */
-    public function onUnsafeAttribute($name, $value)
+    public function onUnsafeAttribute(string $name, $value): void
     {
         if (getDI('debug')) {
             App::debug("Failed to set unsafe attribute '$name' in '" . get_class($this) . "'.");
@@ -528,7 +536,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
     /**
      * @return string
      */
-    public function getScenario()
+    public function getScenario(): string
     {
         return $this->_scenario;
     }
@@ -565,8 +573,10 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @param string $formName the form name to use to load the data into the model.
      * If not set, [[formName()]] is used.
      * @return bool whether `load()` found the expected form in `$data`.
+     * @throws InvalidConfigException
+     * @throws ReflectionException
      */
-    public function load($data, $formName = null)
+    public function load(array $data, string $formName = null): bool
     {
         $scope = $formName ?? $this->formName();
         if ($scope === '' && !empty($data)) {
@@ -596,8 +606,10 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * If not set, it will use the [[formName()]] value of the first model in `$models`.
      * This parameter is available since version 2.0.1.
      * @return bool whether at least one of the models is successfully populated.
+     * @throws InvalidConfigException
+     * @throws ReflectionException
      */
-    public static function loadMultiple($models, $data, $formName = null)
+    public static function loadMultiple(array $models, array $data, string $formName = null): bool
     {
         if ($formName === null) {
             /* @var $first Model|false */
@@ -635,7 +647,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * @return bool whether all models are valid. False will be returned if one
      * or multiple models have validation error.
      */
-    public static function validateMultiple($models, $attributeNames = null, $clearErrors = true)
+    public static function validateMultiple(array $models, array $attributeNames = null, bool $clearErrors = true): bool
     {
         $valid = true;
         /* @var $model Model */
@@ -689,9 +701,10 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * The default implementation of this method returns [[attributes()]] indexed by the same attribute names.
      *
      * @return array the list of field names or field definitions.
+     * @throws ReflectionException
      * @see toArray()
      */
-    public function fields()
+    public function fields(): array
     {
         $fields = $this->attributes();
 
@@ -702,6 +715,7 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
      * Returns an iterator for traversing the attributes in the model.
      * This method is required by the interface [[\IteratorAggregate]].
      * @return ArrayIterator an iterator for traversing the items in the list.
+     * @throws ReflectionException
      */
     public function getIterator()
     {
@@ -754,5 +768,9 @@ class Model extends BaseObject implements StaticInstanceInterface, IteratorAggre
     public function offsetUnset($offset)
     {
         $this->$offset = null;
+    }
+
+    public function init()
+    {
     }
 }
