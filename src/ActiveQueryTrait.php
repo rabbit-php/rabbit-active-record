@@ -33,7 +33,7 @@ trait ActiveQueryTrait
      * @var bool whether to return each record as an array. If false (default), an object
      * of [[modelClass]] will be created to represent each record.
      */
-    public ?bool $asArray;
+    public bool $asArray = false;
 
 
     /**

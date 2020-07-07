@@ -38,7 +38,7 @@ trait ActiveRelationTrait
      * @var ActiveRecord the primary model of a relational query.
      * This is used only in lazy loading with dynamic query options.
      */
-    public ?ActiveRecord $primaryModel;
+    public ?ActiveRecord $primaryModel = null;
     /**
      * @var array the columns of the primary and foreign tables that establish a relation.
      * The array keys must be columns of the table for this relation, and the array values
@@ -64,7 +64,7 @@ trait ActiveRelationTrait
      * This property is only used in relational context.
      * @see inverseOf()
      */
-    public ?string $inverseOf;
+    public ?string $inverseOf = null;
 
 
     /**

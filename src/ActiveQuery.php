@@ -11,7 +11,7 @@ namespace Rabbit\ActiveRecord;
 use Psr\SimpleCache\InvalidArgumentException;
 use Rabbit\Base\Exception\InvalidConfigException;
 use Rabbit\DB\Command;
-use Rabbit\DB\ConnectionInterface;
+use Rabbit\Pool\ConnectionInterface;
 use Rabbit\DB\Query;
 use Rabbit\DB\QueryBuilder;
 use Rabbit\DB\QueryTrait;
@@ -88,7 +88,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
      * @var string the SQL statement to be executed for retrieving AR records.
      * This is set by [[ActiveRecord::findBySql()]].
      */
-    public string $sql;
+    public ?string $sql = null;
     /**
      * @var string|array the join condition to be used when this query is used in a relational context.
      * The condition will be used in the ON part when [[ActiveQuery::joinWith()]] is called.
@@ -271,7 +271,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     public function one(ConnectionInterface $db = null)
     {
         $row = parent::one($db);
-        if ($row !== false) {
+        if ($row !== null) {
             $models = $this->populate([$row]);
             return reset($models) ?: null;
         }

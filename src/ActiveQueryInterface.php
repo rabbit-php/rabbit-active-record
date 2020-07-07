@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
+use Rabbit\DB\Query;
 use Rabbit\DB\QueryInterface;
 use Rabbit\Pool\ConnectionInterface;
 
@@ -60,7 +61,7 @@ interface ActiveQueryInterface extends QueryInterface
      *
      * @return $this the query object itself
      */
-    public function indexBy($column): self;
+    public function indexBy($column): Query;
 
     /**
      * Specifies the relations with which this query should be performed.
