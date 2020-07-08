@@ -61,7 +61,7 @@ interface ActiveQueryInterface extends QueryInterface
      *
      * @return $this the query object itself
      */
-    public function indexBy($column): Query;
+    public function indexBy($column): QueryInterface;
 
     /**
      * Specifies the relations with which this query should be performed.
