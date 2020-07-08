@@ -92,7 +92,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
      * @throws InvalidConfigException if there is no primary key defined
      * @internal
      */
-    protected static function findByCondition($condition)
+    protected static function findByCondition($condition): ActiveQueryInterface
     {
         $query = static::find();
 
@@ -197,7 +197,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
      * @return string the column name that stores the lock version of a table row.
      * If `null` is returned (default implemented), optimistic locking will not be supported.
      */
-    public function optimisticLock()
+    public function optimisticLock(): ?string
     {
         return null;
     }
@@ -205,7 +205,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     /**
      * {@inheritdoc}
      */
-    public function canGetProperty($name, $checkVars = true, $checkBehaviors = true): bool
+    public function canGetProperty(string $name, bool $checkVars = true, bool $checkBehaviors = true): bool
     {
         if (parent::canGetProperty($name, $checkVars, $checkBehaviors)) {
             return true;
@@ -222,7 +222,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     /**
      * {@inheritdoc}
      */
-    public function canSetProperty($name, $checkVars = true, $checkBehaviors = true): bool
+    public function canSetProperty(string $name, bool $checkVars = true, bool $checkBehaviors = true): bool
     {
         if (parent::canSetProperty($name, $checkVars, $checkBehaviors)) {
             return true;
@@ -591,7 +591,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
      * @return array the changed attribute values (name-value pairs)
      * @throws ReflectionException
      */
-    public function getDirtyAttributes(?array $names = null)
+    public function getDirtyAttributes(?array $names = null): array
     {
         if ($names === null) {
             $names = $this->attributes();
@@ -749,7 +749,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
             return 0;
         }
 
-        $rows = static::updateAll($values, $this->getOldPrimaryKey(true));
+        $rows = static::updateAll($values, $this->getOldPrimaryKey());
 
         foreach ($values as $name => $value) {
             $this->_oldAttributes[$name] = $this->_attributes[$name];
@@ -772,7 +772,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
         if (empty($values)) {
             return 0;
         }
-        $condition = $this->getOldPrimaryKey(true);
+        $condition = $this->getOldPrimaryKey();
         $lock = $this->optimisticLock();
         if ($lock !== null) {
             $values[$lock] = $this->$lock + 1;
@@ -820,7 +820,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
      */
     public function updateCounters(array $counters): bool
     {
-        if (static::updateAllCounters($counters, $this->getOldPrimaryKey(true)) > 0) {
+        if (static::updateAllCounters($counters, $this->getOldPrimaryKey()) > 0) {
             foreach ($counters as $name => $value) {
                 if (!isset($this->_attributes[$name])) {
                     $this->_attributes[$name] = $value;
@@ -860,7 +860,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
         $result = 0;
         // we do not check the return value of deleteAll() because it's possible
         // the record is already deleted in the database and thus the method will return 0
-        $condition = $this->getOldPrimaryKey(true);
+        $condition = $this->getOldPrimaryKey();
         $lock = $this->optimisticLock();
         if ($lock !== null) {
             $condition[$lock] = $this->$lock;
@@ -916,7 +916,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     public function refresh(): bool
     {
         /* @var $record BaseActiveRecord */
-        $record = static::findOne($this->getPrimaryKey(true));
+        $record = static::findOne($this->getPrimaryKey());
         return $this->refreshInternal($record);
     }
 
@@ -971,13 +971,9 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
      * the primary key is composite. A string is returned otherwise (null will be returned if
      * the key value is null).
      */
-    public function getPrimaryKey(bool $asArray = false)
+    public function getPrimaryKey(): ?array
     {
         $keys = $this->primaryKey();
-        if (!$asArray && count($keys) === 1) {
-            return isset($this->_attributes[$keys[0]]) ? $this->_attributes[$keys[0]] : null;
-        }
-
         $values = [];
         foreach ($keys as $name) {
             $values[$name] = isset($this->_attributes[$name]) ? $this->_attributes[$name] : null;
@@ -987,29 +983,14 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     }
 
     /**
-     * Returns the old primary key value(s).
-     * This refers to the primary key value that is populated into the record
-     * after executing a find method (e.g. find(), findOne()).
-     * The value remains unchanged even if the primary key attribute is manually assigned with a different value.
-     * @param bool $asArray whether to return the primary key value as an array. If `true`,
-     * the return value will be an array with column name as key and column value as value.
-     * If this is `false` (default), a scalar value will be returned for non-composite primary key.
-     * @return mixed the old primary key value. An array (column name => column value) is returned if the primary key
-     * is composite or `$asArray` is `true`. A string is returned otherwise (null will be returned if
-     * the key value is null).
-     * @throws Exception if the AR model does not have a primary key
-     * @property mixed The old primary key value. An array (column name => column value) is
-     * returned if the primary key is composite. A string is returned otherwise (null will be
-     * returned if the key value is null).
+     * @return array|null
+     * @throws Exception
      */
-    public function getOldPrimaryKey(bool $asArray = false)
+    public function getOldPrimaryKey(): ?array
     {
         $keys = $this->primaryKey();
         if (empty($keys)) {
             throw new Exception(get_class($this) . ' does not have a primary key. You should either define a primary key for the corresponding table or override the primaryKey() method.');
-        }
-        if (!$asArray && count($keys) === 1) {
-            return isset($this->_oldAttributes[$keys[0]]) ? $this->_oldAttributes[$keys[0]] : null;
         }
 
         $values = [];

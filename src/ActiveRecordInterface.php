@@ -7,6 +7,7 @@ declare(strict_types=1);
  */
 
 namespace Rabbit\ActiveRecord;
+
 use Rabbit\Base\Core\StaticInstanceInterface;
 use Rabbit\Pool\ConnectionInterface;
 
@@ -62,32 +63,15 @@ interface ActiveRecordInterface extends StaticInstanceInterface
     public function hasAttribute(string $name): bool;
 
     /**
-     * Returns the primary key value(s).
-     * @param bool $asArray whether to return the primary key value as an array. If true,
-     * the return value will be an array with attribute names as keys and attribute values as values.
-     * Note that for composite primary keys, an array will always be returned regardless of this parameter value.
-     * @return mixed the primary key value. An array (attribute name => attribute value) is returned if the primary key
-     * is composite or `$asArray` is true. A string is returned otherwise (`null` will be returned if
-     * the key value is `null`).
+     * @param bool $asArray
+     * @return array|null
      */
-    public function getPrimaryKey(bool $asArray = false);
+    public function getPrimaryKey(): ?array;
 
     /**
-     * Returns the old primary key value(s).
-     * This refers to the primary key value that is populated into the record
-     * after executing a find method (e.g. find(), findOne()).
-     * The value remains unchanged even if the primary key attribute is manually assigned with a different value.
-     * @param bool $asArray whether to return the primary key value as an array. If true,
-     * the return value will be an array with column name as key and column value as value.
-     * If this is `false` (default), a scalar value will be returned for non-composite primary key.
-     * @return mixed the old primary key value. An array (column name => column value) is returned if the primary key
-     * is composite or `$asArray` is true. A string is returned otherwise (`null` will be returned if
-     * the key value is `null`).
-     * @property mixed The old primary key value. An array (column name => column value) is
-     * returned if the primary key is composite. A string is returned otherwise (`null` will be
-     * returned if the key value is `null`).
+     * @return array|null
      */
-    public function getOldPrimaryKey(bool $asArray = false);
+    public function getOldPrimaryKey(): ?array;
 
     /**
      * Returns a value indicating whether the given set of attributes represents the primary key for this model.

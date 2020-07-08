@@ -257,7 +257,7 @@ class ActiveRecord extends BaseActiveRecord
         $tableName = key($query->getTablesUsedInFrom());
         $pk = [];
         // disambiguate column names in case ActiveQuery adds a JOIN
-        foreach ($this->getPrimaryKey(true) as $key => $value) {
+        foreach ($this->getPrimaryKey() as $key => $value) {
             $pk[$tableName . '.' . $key] = $value;
         }
         $query->where($pk);
@@ -720,7 +720,7 @@ class ActiveRecord extends BaseActiveRecord
     {
         // we do not check the return value of deleteAll() because it's possible
         // the record is already deleted in the database and thus the method will return 0
-        $condition = $this->getOldPrimaryKey(true);
+        $condition = $this->getOldPrimaryKey();
         $lock = $this->optimisticLock();
         if ($lock !== null) {
             $condition[$lock] = $this->$lock;
