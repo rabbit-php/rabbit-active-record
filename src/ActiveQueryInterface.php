@@ -35,14 +35,9 @@ interface ActiveQueryInterface extends QueryInterface
     public function asArray(bool $value = true): self;
 
     /**
-     * Executes query and returns a single row of result.
-     * @param ConnectionInterface $db the DB connection used to create the DB command.
-     * If `null`, the DB connection returned by [[ActiveQueryTrait::$modelClass|modelClass]] will be used.
-     * @return ActiveRecordInterface|array|null a single row of query result. Depending on the setting of [[asArray]],
-     * the query result may be either an array or an ActiveRecord object. `null` will be returned
-     * if the query results in nothing.
+     * @return array|bool
      */
-    public function one(ConnectionInterface $db = null);
+    public function one();
 
     /**
      * Sets the [[indexBy]] property.

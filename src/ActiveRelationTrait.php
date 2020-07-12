@@ -21,8 +21,8 @@ use Throwable;
  * @author Carsten Brandt <mail@cebe.cc>
  * @since 2.0
  *
- * @method ActiveRecordInterface one(ConnectionInterface $db = null)
- * @method ActiveRecordInterface[] all(ConnectionInterface $db = null)
+ * @method ActiveRecordInterface one()
+ * @method ActiveRecordInterface[] all()
  * @property ActiveRecord $modelClass
  */
 trait ActiveRelationTrait

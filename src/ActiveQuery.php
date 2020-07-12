@@ -100,8 +100,8 @@ class ActiveQuery extends Query implements ActiveQueryInterface
 
 
     /**
-     * Constructor.
-     * @param string $modelClass the model class associated with this query
+     * ActiveQuery constructor.
+     * @param string $modelClass
      * @param array $config
      * @throws ReflectionException
      */
@@ -109,7 +109,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     {
         $this->modelClass = $modelClass;
 
-        parent::__construct($config);
+        parent::__construct($modelClass::getDb(), $config);
     }
 
     /**
@@ -259,18 +259,13 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     }
 
     /**
-     * Executes query and returns a single row of result.
-     * @param ConnectionInterface|null $db the DB connection used to create the DB command.
-     * If `null`, the DB connection returned by [[modelClass]] will be used.
-     * @return ActiveRecord|array|null a single row of query result. Depending on the setting of [[asArray]],
-     * the query result may be either an array or an ActiveRecord object. `null` will be returned
-     * if the query results in nothing.
+     * @return array|bool|mixed|null
      * @throws InvalidArgumentException
      * @throws Throwable
      */
-    public function one(ConnectionInterface $db = null)
+    public function one()
     {
-        $row = parent::one($db);
+        $row = parent::one();
         if ($row !== null) {
             $models = $this->populate([$row]);
             return reset($models) ?: null;
@@ -279,28 +274,21 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     }
 
     /**
-     * Creates a DB command that can be used to execute this query.
-     * @param ConnectionInterface|null $db the DB connection used to create the DB command.
-     * If `null`, the DB connection returned by [[modelClass]] will be used.
-     * @return Command the created DB command instance.
+     * @return Command
      * @throws Throwable
      */
-    public function createCommand(ConnectionInterface $db = null): Command
+    public function createCommand(): Command
     {
         /* @var $modelClass ActiveRecord */
         $modelClass = $this->modelClass;
-        if ($db === null) {
-            $db = $modelClass::getDb();
-        }
-
         if ($this->sql === null) {
-            [$sql, $params] = $db->getQueryBuilder()->build($this);
+            [$sql, $params] = $this->db->getQueryBuilder()->build($this);
         } else {
             $sql = $this->sql;
             $params = $this->params;
         }
 
-        $command = $db->createCommand($sql, $params);
+        $command = $this->db->createCommand($sql, $params);
         $this->setCommandCache($command);
 
         return $command;
@@ -309,22 +297,19 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     /**
      * {@inheritdoc}
      */
-    protected function queryScalar($selectExpression, ?ConnectionInterface $db): ?string
+    protected function queryScalar($selectExpression): ?string
     {
         /* @var $modelClass ActiveRecord */
         $modelClass = $this->modelClass;
-        if ($db === null) {
-            $db = $modelClass::getDb();
-        }
 
         if ($this->sql === null) {
-            return parent::queryScalar($selectExpression, $db);
+            return parent::queryScalar($selectExpression);
         }
 
-        $command = (new Query())->select([$selectExpression])
+        $command = (new Query($this->db))->select([$selectExpression])
             ->from(['c' => "({$this->sql})"])
             ->params($this->params)
-            ->createCommand($db);
+            ->createCommand();
         $this->setCommandCache($command);
 
         return $command->queryScalar();
