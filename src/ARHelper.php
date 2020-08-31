@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
@@ -207,9 +208,9 @@ class ARHelper
      */
     public static function update($model, array $body, bool $useOrm = false, bool $batch = true): array
     {
-        if (isset($body['condition']) && $body['condition']) {
-            $result = $useOrm ? $model::getDb()->createCommandExt(['update', [$body['edit'], $body['condition']]])->execute() :
-                $model->updateAll($body['edit'], DBHelper::Search((new Query()), $body['condition'])->where);
+        if (isset($body['edit']) && $body['edit']) {
+            $result = $useOrm ? $model::getDb()->createCommandExt(['update', $body['edit'], ArrayHelper::getValue($body, 'where', [])])->execute() :
+                $model->updateAll($body['edit'], DBHelper::Search((new Query()),  ArrayHelper::getValue($body, 'where', []))->where);
             if ($result === false) {
                 throw new Exception('Failed to update the object for unknown reason.');
             }
