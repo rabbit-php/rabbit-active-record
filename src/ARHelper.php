@@ -77,7 +77,7 @@ class ARHelper
             $placeholders = array();
             $table->isNewRecord = false;
             if (!$table->validate()) {
-                throw new UserException(implode(BREAKS, $table->getFirstErrors()));
+                throw new UserException(implode(PHP_EOL, $table->getFirstErrors()));
             }
             $tableArray = $table->toArray();
             if ($keys) {
@@ -274,7 +274,7 @@ class ARHelper
         } elseif (!$model->hasErrors()) {
             throw new Exception('Failed to create the object for unknown reason.');
         } else {
-            throw new Exception(implode(BREAKS, $model->getFirstErrors()));
+            throw new Exception(implode(PHP_EOL, $model->getFirstErrors()));
         }
         return $result;
     }
