@@ -42,7 +42,7 @@ class ARHelper
         $sql = '';
         $params = [];
         $i = 0;
-        if (ArrayHelper::isAssociative($array_columns)) {
+        if (!ArrayHelper::isIndexed($array_columns)) {
             $array_columns = [$array_columns];
         }
         $keys = $model::primaryKey();
