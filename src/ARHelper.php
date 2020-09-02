@@ -248,7 +248,7 @@ class ARHelper
             $result = self::deleteSeveral($model, $body);
         } else {
             $result = $useOrm ? $model::getDb()->createCommandExt(['delete', [$model::tableName(), $body]])->execute() :
-                $model::deleteAll(DBHelper::Search((new Query()), ['where' => $body])->where);
+                $model::deleteAll(DBHelper::Search((new Query()), $body)->where);
         }
         if ($result === false) {
             throw new Exception('Failed to delete the object for unknown reason.');
