@@ -55,18 +55,19 @@ class ARHelper
             $table = clone $model;
             $table->load($item, '');
             //关联模型
-            foreach ($table->getRelations() as $child => $val) {
-                $key = explode("\\", $child);
-                $key = strtolower(end($key));
+            foreach ($table->getRelations() as $child => [$key, $val, $delete]) {
                 if (isset($item[$key])) {
                     $child_model = new $child();
                     if (!isset($item[$key][0])) {
                         $item[$key] = [$item[$key]];
                     }
                     foreach ($val as $c_attr => $p_attr) {
-                        foreach ($item[$key] as $index => &$param) {
+                        foreach ($item[$key] as &$param) {
                             $param[$c_attr] = $table->{$p_attr};
                         }
+                    }
+                    if ($delete) {
+                        self::delete($child_model, $delete);
                     }
                     if (self::saveSeveral($child_model, $item[$key]) === false) {
                         return 0;
@@ -145,9 +146,7 @@ class ARHelper
         foreach ($array_columns as $item) {
             $model->load($item, '');
             $model->isNewRecord = false;
-            foreach ($model->getRelations() as $child => $val) {
-                $classArr = explode("\\", $child);
-                $key = strtolower(end($classArr));
+            foreach ($model->getRelations() as $child => [$key]) {
                 if (isset($item[$key])) {
                     $child_model = new $child();
                     if (self::deleteSeveral($child_model, $item[$key]) === false) {
@@ -293,9 +292,7 @@ class ARHelper
     {
         $result = [];
         //关联模型
-        foreach ($model->getRelations() as $child => $val) {
-            $key = explode("\\", $child);
-            $key = strtolower(end($key));
+        foreach ($model->getRelations() as $child => [$key, $val]) {
             if (isset($body[$key])) {
                 if (ArrayHelper::isAssociative($body[$key])) {
                     $body[$key] = [$body[$key]];
@@ -377,9 +374,7 @@ class ARHelper
     {
         $result = [];
         //关联模型
-        foreach ($model->getRelations() as $child => $val) {
-            $key = explode("\\", $child);
-            $key = strtolower(end($key));
+        foreach ($model->getRelations() as $child => [$key, $val, $delete]) {
             if (isset($body[$key])) {
                 $child_model = new $child();
                 if (isset($params['edit']) && $params['edit']) {
@@ -389,6 +384,9 @@ class ARHelper
                         $params = [$body[$key]];
                     } else {
                         $params = $body[$key];
+                    }
+                    if ($delete) {
+                        self::delete($child_model, $delete);
                     }
                     $exists = self::findExists($child_model, $params);
                     foreach ($params as $param) {
