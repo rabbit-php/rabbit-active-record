@@ -67,7 +67,11 @@ class ARHelper
                         }
                     }
                     if ($delete) {
-                        self::delete($child_model, $delete);
+                        if (is_array($delete)) {
+                            self::delete($child_model, $delete);
+                        } elseif (is_callable($delete)) {
+                            call_user_func($delete, $child_model, $item[$key]);
+                        }
                     }
                     if (self::saveSeveral($child_model, $item[$key]) === false) {
                         return 0;
@@ -386,7 +390,11 @@ class ARHelper
                         $params = $body[$key];
                     }
                     if ($delete) {
-                        self::delete($child_model, $delete);
+                        if (is_array($delete)) {
+                            self::delete($child_model, $delete);
+                        } elseif (is_callable($delete)) {
+                            call_user_func($delete, $child_model, $params);
+                        }
                     }
                     $exists = self::findExists($child_model, $params);
                     foreach ($params as $param) {
