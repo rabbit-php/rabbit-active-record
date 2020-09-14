@@ -105,7 +105,7 @@ class ARHelper
                     }
                 } elseif ($value instanceof JsonExpression) {
                     $placeholders[] = '?';
-                    $params[] = JsonHelper::encode($value);
+                    $params[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
                 } else {
                     $placeholders[] = '?';
                     $params[] = $value;
