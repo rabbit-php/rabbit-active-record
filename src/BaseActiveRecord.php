@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
@@ -63,7 +64,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
      */
     protected array $_relationsDependencies = [];
 
-
+    protected bool $autoAlias = true;
     /**
      * {@inheritdoc}
      * @return array|ActiveRecordInterface
@@ -607,9 +608,9 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
         } else {
             foreach ($this->_attributes as $name => $value) {
                 if (isset($names[$name]) && (!array_key_exists(
-                            $name,
-                            $this->_oldAttributes
-                        ) || $value !== $this->_oldAttributes[$name])) {
+                    $name,
+                    $this->_oldAttributes
+                ) || $value !== $this->_oldAttributes[$name])) {
                     $attributes[$name] = $value;
                 }
             }
@@ -1066,6 +1067,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
         try {
             // the relation could be defined in a behavior
             $relation = $this->$getter();
+            $this->autoAlias && $relation->alias($name);
         } catch (UnknownMethodException $e) {
             if ($throwException) {
                 throw new InvalidArgumentException(get_class($this) . ' has no relation named "' . $name . '".', 0, $e);
