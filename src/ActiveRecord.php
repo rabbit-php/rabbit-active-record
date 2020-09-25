@@ -8,20 +8,20 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
-use DI\DependencyException;
-use DI\NotFoundException;
-use Rabbit\Base\App;
-use Rabbit\Base\Exception\InvalidArgumentException;
-use Rabbit\Base\Exception\InvalidConfigException;
-use Rabbit\Base\Helper\ArrayHelper;
-use Rabbit\Base\Helper\Inflector;
-use Rabbit\Base\Helper\StringHelper;
-use Rabbit\DB\Exception;
-use Rabbit\DB\Expression;
-use Rabbit\DB\StaleObjectException;
-use Rabbit\DB\TableSchema;
-use Rabbit\Pool\ConnectionInterface;
 use Throwable;
+use Rabbit\Base\App;
+use Rabbit\DB\Exception;
+use DI\NotFoundException;
+use Rabbit\DB\Expression;
+use Rabbit\DB\TableSchema;
+use DI\DependencyException;
+use Rabbit\Base\Helper\Inflector;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\DB\StaleObjectException;
+use Rabbit\Base\Helper\StringHelper;
+use Rabbit\Pool\ConnectionInterface;
+use Rabbit\Base\Exception\InvalidConfigException;
+use Rabbit\Base\Exception\InvalidArgumentException;
 
 /**
  * ActiveRecord is the base class for classes representing relational data in terms of objects.
@@ -376,11 +376,11 @@ class ActiveRecord extends BaseActiveRecord
 
     /**
      * {@inheritdoc}
-     * @return ActiveQueryInterface the newly created [[ActiveQuery]] instance.
+     * @return ActiveQuery the newly created [[ActiveQuery]] instance.
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public static function find(): ActiveQueryInterface
+    public static function find(): ActiveQuery
     {
         return create(ActiveQuery::class, ['modelClass' => get_called_class()], false);
     }

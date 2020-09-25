@@ -8,15 +8,13 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
+use Throwable;
+use Rabbit\DB\Query;
+use Rabbit\DB\Command;
+use ReflectionException;
+use Rabbit\DB\QueryBuilder;
 use Psr\SimpleCache\InvalidArgumentException;
 use Rabbit\Base\Exception\InvalidConfigException;
-use Rabbit\DB\Command;
-use Rabbit\Pool\ConnectionInterface;
-use Rabbit\DB\Query;
-use Rabbit\DB\QueryBuilder;
-use Rabbit\DB\QueryTrait;
-use ReflectionException;
-use Throwable;
 
 /**
  * ActiveQuery represents a DB query associated with an Active Record class.
@@ -279,8 +277,6 @@ class ActiveQuery extends Query implements ActiveQueryInterface
      */
     public function createCommand(): Command
     {
-        /* @var $modelClass ActiveRecord */
-        $modelClass = $this->modelClass;
         if ($this->sql === null) {
             [$sql, $params] = $this->db->getQueryBuilder()->build($this);
         } else {

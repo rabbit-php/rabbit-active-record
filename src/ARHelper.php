@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
-use Rabbit\Base\Core\UserException;
-use Rabbit\Base\Exception\InvalidArgumentException;
-use Rabbit\Base\Exception\InvalidConfigException;
-use Rabbit\Base\Exception\NotSupportedException;
-use Rabbit\Base\Helper\ArrayHelper;
-use Rabbit\Base\Helper\JsonHelper;
+use Throwable;
+use Rabbit\DB\Query;
 use Rabbit\DB\DBHelper;
 use Rabbit\DB\Exception;
+use ReflectionException;
 use Rabbit\DB\Expression;
 use Rabbit\DB\JsonExpression;
-use Rabbit\DB\Query;
+use Rabbit\Base\Helper\JsonHelper;
+use Rabbit\Base\Core\UserException;
+use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\StaleObjectException;
-use ReflectionException;
-use Throwable;
+use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\Base\Exception\InvalidConfigException;
+use Rabbit\Base\Exception\InvalidArgumentException;
 
 /**
  * Class ARHelper
@@ -186,8 +186,7 @@ class ARHelper
         if (!ArrayHelper::isIndexed($body)) {
             $body = [$body];
         }
-        $pks = $model::primaryKey();
-        if (!$batch || !isset($body[0][current($pks)])) {
+        if (!$batch) {
             $result = [];
             foreach ($body as $params) {
                 $res = self::createSeveral(clone $model, $params);
