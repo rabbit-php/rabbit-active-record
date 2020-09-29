@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
@@ -110,6 +111,11 @@ class ActiveRecord extends BaseActiveRecord
      * @return array
      */
     public function getRelations(): array
+    {
+        return [];
+    }
+
+    public static function getScenes(): array
     {
         return [];
     }
@@ -233,7 +239,7 @@ class ActiveRecord extends BaseActiveRecord
         // valid column names are table column names or column names prefixed with table name
         $columnNames = static::getTableSchema()->getColumnNames();
         $tableName = static::tableName();
-        $columnNames = array_merge($columnNames, array_map(fn($columnName) => "$tableName.$columnName", $columnNames));
+        $columnNames = array_merge($columnNames, array_map(fn ($columnName) => "$tableName.$columnName", $columnNames));
         foreach ($condition as $key => $value) {
             if (is_string($key) && !in_array($key, $columnNames, true)) {
                 throw new InvalidArgumentException('Key "' . $key . '" is not a column name and can not be used as a filter');
