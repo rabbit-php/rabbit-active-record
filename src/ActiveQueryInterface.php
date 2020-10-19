@@ -8,9 +8,7 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
-use Rabbit\DB\Query;
 use Rabbit\DB\QueryInterface;
-use Rabbit\Pool\ConnectionInterface;
 
 /**
  * ActiveQueryInterface defines the common interface to be implemented by active record query classes.

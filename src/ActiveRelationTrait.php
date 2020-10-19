@@ -8,11 +8,10 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
+use Throwable;
+use ReflectionException;
 use InvalidArgumentException;
 use Rabbit\Base\Exception\InvalidConfigException;
-use Rabbit\DB\ConnectionInterface;
-use ReflectionException;
-use Throwable;
 
 /**
  * ActiveRelationTrait implements the common methods and properties for active record relational queries.
