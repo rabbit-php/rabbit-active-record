@@ -33,7 +33,7 @@ class ARHelper
      * @throws NotSupportedException
      * @throws Throwable
      */
-    public static function saveSeveral(BaseActiveRecord $model, array $array_columns): int
+    public static function saveSeveral(BaseActiveRecord $model, array $array_columns, bool $withUpdate = true): int
     {
         if (empty($array_columns)) {
             return 0;
@@ -95,7 +95,7 @@ class ARHelper
             foreach ($tableArray as $name => $value) {
                 if (!$i) {
                     $names[] = $conn->quoteColumnName($name);
-                    $updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")";
+                    $withUpdate && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
                 }
                 $value = isset($columnSchemas[$name]) ? $columnSchemas[$name]->dbTypecast($value) : $value;
                 if ($value instanceof Expression) {
@@ -120,7 +120,7 @@ class ARHelper
             }
             $i++;
         }
-        $sql .= " on duplicate key update " . implode(', ', $updates);
+        $withUpdate && $updates && $sql .= " on duplicate key update " . implode(', ', $updates);
         $result = $conn->createCommand($sql, $params)->execute();
         if (is_array($result)) {
             return end($result);
@@ -193,13 +193,13 @@ class ARHelper
                 $result[] = $res;
             }
         } else {
-            $result = self::saveSeveral($model, $body);
+            $result = self::saveSeveral($model, $body, false);
         }
         return is_array($result) ? $result : [$result];
     }
 
     /**
-     * @param $model
+     * @param BaseActiveRecord $model
      * @param array $body
      * @param bool $useOrm
      * @param bool $batch
@@ -208,7 +208,7 @@ class ARHelper
      * @throws NotSupportedException
      * @throws Throwable
      */
-    public static function update($model, array $body, bool $useOrm = false, bool $batch = true): array
+    public static function update(BaseActiveRecord $model, array $body, bool $useOrm = false, bool $batch = true): array
     {
         if (isset($body['edit']) && $body['edit']) {
             $result = $useOrm ? $model::getDb()->createCommandExt(['update', $body['edit'], ArrayHelper::getValue($body, 'where', [])])->execute() :
@@ -345,7 +345,7 @@ class ARHelper
     }
 
     /**
-     * @param $model
+     * @param BaseActiveRecord $model
      * @param array $body
      * @param array|null $exist
      * @return array
@@ -353,7 +353,7 @@ class ARHelper
      * @throws NotSupportedException
      * @throws Throwable
      */
-    public static function updateSeveral($model, array $body, ?array $exist): array
+    public static function updateSeveral(BaseActiveRecord $model, array $body, ?array $exist): array
     {
         $model->setOldAttributes($exist);
         $model->load($body, '');
