@@ -15,7 +15,7 @@
     "rabbit/db": "dev-master",
     "rabbit/pool": "dev-master",
     "rabbit/cache": "dev-master",
-    "respect/validation": "^1.1"
+    "respect/validation": "^2"
   },
   "require-dev": {
     "swoole/ide-helper": "@dev",
