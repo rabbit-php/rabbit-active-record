@@ -4,20 +4,14 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
-use Throwable;
 use Rabbit\DB\Query;
 use Rabbit\DB\DBHelper;
 use Rabbit\DB\Exception;
-use ReflectionException;
 use Rabbit\DB\Expression;
 use Rabbit\DB\JsonExpression;
 use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Core\UserException;
 use Rabbit\Base\Helper\ArrayHelper;
-use Rabbit\DB\StaleObjectException;
-use Rabbit\Base\Exception\NotSupportedException;
-use Rabbit\Base\Exception\InvalidConfigException;
-use Rabbit\Base\Exception\InvalidArgumentException;
 
 /**
  * Class ARHelper
@@ -25,25 +19,17 @@ use Rabbit\Base\Exception\InvalidArgumentException;
  */
 class ARHelper
 {
-    /**
-     * @param $model
-     * @param array $array_columns
-     * @return int
-     * @throws InvalidArgumentException
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
-    public static function saveSeveral(BaseActiveRecord $model, array $array_columns, bool $withUpdate = true): int
+    public static function saveSeveral(BaseActiveRecord $model, array $arrayColumns, bool $withUpdate = true): int
     {
-        if (empty($array_columns)) {
+        if (empty($arrayColumns)) {
             return 0;
         }
         $conn = $model::getDb();
         $sql = '';
         $params = [];
         $i = 0;
-        if (!ArrayHelper::isIndexed($array_columns)) {
-            $array_columns = [$array_columns];
+        if (!ArrayHelper::isIndexed($arrayColumns)) {
+            $arrayColumns = [$arrayColumns];
         }
         $keys = $model::primaryKey();
 
@@ -51,7 +37,7 @@ class ARHelper
         $tableSchema = $schema->getTableSchema($model::tableName());
         $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
 
-        foreach ($array_columns as $item) {
+        foreach ($arrayColumns as $item) {
             $table = clone $model;
             $table->load($item, '');
             //关联模型
@@ -121,33 +107,56 @@ class ARHelper
             $i++;
         }
         $withUpdate && $updates && $sql .= " on duplicate key update " . implode(', ', $updates);
-        $result = $conn->createCommand($sql, $params)->execute();
-        if (is_array($result)) {
-            return end($result);
-        }
-        return $result;
+        return $conn->createCommand($sql, $params)->execute();
     }
 
-    /**
-     * @param BaseActiveRecord $model
-     * @param array $array_columns
-     * @return int
-     * @throws NotSupportedException
-     * @throws InvalidConfigException
-     * @throws ReflectionException
-     */
-    public static function deleteSeveral(BaseActiveRecord $model, array $array_columns): int
+    public static function updateSeveral(BaseActiveRecord $model, array $arrayColumns, array $when = null): int
     {
-        if (empty($array_columns)) {
+        $updateSql = '';
+        if (!ArrayHelper::isIndexed($arrayColumns)) {
+            $arrayColumns = [$arrayColumns];
+        }
+        $firstRow = current($arrayColumns);
+        $updateColumn = array_keys($firstRow);
+        $referenceColumns = $when ?? $model::primaryKey();
+        foreach ($referenceColumns as $column) {
+            unset($updateColumn[array_search($column, $updateColumn)]);
+        }
+        $updateSql = "UPDATE " .  $model::tableName() . " SET ";
+        $sets = [];
+        $bindings = [];
+        foreach ($updateColumn as $uColumn) {
+            $setSql = "`" . $uColumn . "` = CASE ";
+            foreach ($arrayColumns as $data) {
+                $refSql = '';
+                foreach ($referenceColumns as $ref) {
+                    $refSql .= " `" . $ref . "` = ? and";
+                    $bindings[] = $data[$ref];
+                }
+                $refSql = rtrim($refSql, 'and');
+                $setSql .= "WHEN $refSql THEN ? ";
+                $bindings[] = $data[$uColumn];
+            }
+            $setSql .= "ELSE `" . $uColumn . "` END ";
+            $sets[] = $setSql;
+        }
+        $updateSql .= implode(', ', $sets);
+        $updateSql = rtrim($updateSql, ", ");
+        return $model::getDb()->createCommand($updateSql, $bindings)->execute();
+    }
+
+    public static function deleteSeveral(BaseActiveRecord $model, array $arrayColumns): int
+    {
+        if (empty($arrayColumns)) {
             return 0;
         }
         $result = false;
         $keys = $model::primaryKey();
         $condition = [];
-        if (ArrayHelper::isAssociative($array_columns)) {
-            $array_columns = [$array_columns];
+        if (ArrayHelper::isAssociative($arrayColumns)) {
+            $arrayColumns = [$arrayColumns];
         }
-        foreach ($array_columns as $item) {
+        foreach ($arrayColumns as $item) {
             $model->load($item, '');
             $model->isNewRecord = false;
             foreach ($model->getRelations() as $child => [$key]) {
@@ -172,15 +181,6 @@ class ARHelper
         return (int)$result;
     }
 
-    /**
-     * @param BaseActiveRecord $model
-     * @param array $body
-     * @param bool $batch
-     * @return array
-     * @throws Exception
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
     public static function create(BaseActiveRecord $model, array $body, bool $batch = true): array
     {
         if (!ArrayHelper::isIndexed($body)) {
@@ -189,7 +189,7 @@ class ARHelper
         if (!$batch) {
             $result = [];
             foreach ($body as $params) {
-                $res = self::createSeveral(clone $model, $params);
+                $res = self::createModel(clone $model, $params);
                 $result[] = $res;
             }
         } else {
@@ -198,21 +198,10 @@ class ARHelper
         return is_array($result) ? $result : [$result];
     }
 
-    /**
-     * @param BaseActiveRecord $model
-     * @param array $body
-     * @param bool $useOrm
-     * @param bool $batch
-     * @return array
-     * @throws Exception
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
-    public static function update(BaseActiveRecord $model, array $body, bool $useOrm = false, bool $batch = true): array
+    public static function update(BaseActiveRecord $model, array $body, bool $onlyUpdate = false, array $when = null, bool $batch = true): array
     {
         if (isset($body['edit']) && $body['edit']) {
-            $result = $useOrm ? $model::getDb()->createCommandExt(['update', $body['edit'], ArrayHelper::getValue($body, 'where', [])])->execute() :
-                $model->updateAll($body['edit'], DBHelper::Search((new Query()),  ArrayHelper::getValue($body, 'where', []))->where);
+            $result = $model->updateAll($body['edit'], DBHelper::Search((new Query()),  ArrayHelper::getValue($body, 'where', []))->where);
             if ($result === false) {
                 throw new Exception('Failed to update the object for unknown reason.');
             }
@@ -220,11 +209,13 @@ class ARHelper
             if (!ArrayHelper::isIndexed($body)) {
                 $body = [$body];
             }
-            if (!$batch) {
+            if ($onlyUpdate) {
+                $result = self::updateSeveral($model, $when);
+            } elseif (!$batch) {
                 $result = [];
                 $exists = self::findExists($model, $body);
                 foreach ($body as $params) {
-                    $res = self::updateSeveral(clone $model, $params, self::checkExist($model, $params, $exists));
+                    $res = self::updateModel(clone $model, $params, self::checkExist($params, $exists, $model::primaryKey()));
                     $result[] = $res;
                 }
             } else {
@@ -234,23 +225,12 @@ class ARHelper
         return is_array($result) ? $result : [$result];
     }
 
-    /**
-     * @param BaseActiveRecord $model
-     * @param array $body
-     * @param bool $useOrm
-     * @return int
-     * @throws Exception
-     * @throws InvalidConfigException
-     * @throws NotSupportedException
-     * @throws ReflectionException
-     */
-    public static function delete(BaseActiveRecord $model, array $body, bool $useOrm = false): int
+    public static function delete(BaseActiveRecord $model, array $body): int
     {
         if (ArrayHelper::isIndexed($body)) {
             $result = self::deleteSeveral($model, $body);
         } else {
-            $result = $useOrm ? $model::getDb()->createCommandExt(['delete', [$model::tableName(), $body]])->execute() :
-                $model::deleteAll(DBHelper::Search((new Query()), $body)->where);
+            $result = $model::deleteAll(DBHelper::Search((new Query()), $body)->where);
         }
         if ($result === false) {
             throw new Exception('Failed to delete the object for unknown reason.');
@@ -258,17 +238,7 @@ class ARHelper
         return $result;
     }
 
-    /**
-     * @param BaseActiveRecord $model
-     * @param array $body
-     * @return array
-     * @throws Exception
-     * @throws InvalidConfigException
-     * @throws NotSupportedException
-     * @throws ReflectionException
-     * @throws StaleObjectException
-     */
-    private static function createSeveral(BaseActiveRecord $model, array $body): array
+    private static function createModel(BaseActiveRecord $model, array $body): array
     {
         $model->load($body, '');
         if ($model->save()) {
@@ -281,16 +251,6 @@ class ARHelper
         return $result;
     }
 
-    /**
-     * @param BaseActiveRecord $model
-     * @param array $body
-     * @return array
-     * @throws Exception
-     * @throws InvalidConfigException
-     * @throws NotSupportedException
-     * @throws ReflectionException
-     * @throws StaleObjectException
-     */
     private static function insertRealation(BaseActiveRecord $model, array $body): array
     {
         $result = [];
@@ -307,7 +267,7 @@ class ARHelper
                         }
                     }
                     $child_model = new $child();
-                    $res = self::createSeveral($child_model, $params);
+                    $res = self::createModel($child_model, $params);
                     $result[$key][] = $res;
                 }
             }
@@ -319,12 +279,6 @@ class ARHelper
         return $res;
     }
 
-    /**
-     * @param $model
-     * @param array $body
-     * @param array $condition
-     * @return array
-     */
     private static function findExists(BaseActiveRecord $model, array $body, array $condition = []): array
     {
         $keys = $model::primaryKey();
@@ -344,16 +298,7 @@ class ARHelper
         return [];
     }
 
-    /**
-     * @param BaseActiveRecord $model
-     * @param array $body
-     * @param array|null $exist
-     * @return array
-     * @throws Exception
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
-    public static function updateSeveral(BaseActiveRecord $model, array $body, ?array $exist): array
+    public static function updateModel(BaseActiveRecord $model, array $body, ?array $exist): array
     {
         $model->setOldAttributes($exist);
         $model->load($body, '');
@@ -365,14 +310,6 @@ class ARHelper
         return $result;
     }
 
-    /**
-     * @param BaseActiveRecord $model
-     * @param array $body
-     * @return array
-     * @throws Exception
-     * @throws NotSupportedException
-     * @throws Throwable
-     */
     protected static function saveRealation(BaseActiveRecord $model, array $body): array
     {
         $result = [];
@@ -402,7 +339,7 @@ class ARHelper
                             foreach ($val as $c_attr => $p_attr) {
                                 $param[$c_attr] = $model->{$p_attr};
                             }
-                            $result[$key][] = self::updateSeveral(
+                            $result[$key][] = self::updateModel(
                                 $child_model,
                                 $param,
                                 self::checkExist(
@@ -423,12 +360,6 @@ class ARHelper
         return $res;
     }
 
-    /**
-     * @param array $body
-     * @param array $exists
-     * @param array $conditions
-     * @return array|null
-     */
     public static function checkExist(array $body, array $exists, array $conditions = []): ?array
     {
         if (!$exists) {
