@@ -118,6 +118,10 @@ class ARHelper
         }
         $firstRow = current($arrayColumns);
         $updateColumn = array_keys($firstRow);
+        $conn = $model::getDb();
+        $schema = $conn->getSchema();
+        $tableSchema = $schema->getTableSchema($model::tableName());
+        $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
         $referenceColumns = $when ?? $model::primaryKey();
         foreach ($referenceColumns as $column) {
             unset($updateColumn[array_search($column, $updateColumn)]);
@@ -125,13 +129,23 @@ class ARHelper
         $updateSql = "UPDATE " .  $model::tableName() . " SET ";
         $sets = [];
         $bindings = [];
+        $wheres = [];
         foreach ($updateColumn as $uColumn) {
             $setSql = "`" . $uColumn . "` = CASE ";
             foreach ($arrayColumns as $data) {
                 $refSql = '';
-                foreach ($referenceColumns as $ref) {
+                foreach ($referenceColumns as $i => $ref) {
                     $refSql .= " `" . $ref . "` = ? and";
-                    $bindings[] = $data[$ref];
+                    $value = isset($columnSchemas[$ref]) ? $columnSchemas[$ref]->dbTypecast($data[$ref]) : $data[$ref];
+                    if ($value instanceof Expression) {
+                        foreach ($value->params as  $v) {
+                            $wheres[$i][] = $bindings[] = $v;
+                        }
+                    } elseif ($value instanceof JsonExpression) {
+                        $wheres[$i][] = $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
+                    } else {
+                        $wheres[$i][] = $bindings[] = $value;
+                    }
                 }
                 $refSql = rtrim($refSql, 'and');
                 $setSql .= "WHEN $refSql THEN ? ";
@@ -141,8 +155,20 @@ class ARHelper
             $sets[] = $setSql;
         }
         $updateSql .= implode(', ', $sets);
-        $updateSql = rtrim($updateSql, ", ");
-        return $model::getDb()->createCommand($updateSql, $bindings)->execute();
+        $updateSql = rtrim($updateSql, ", ") . " where (" . implode(',', $referenceColumns) . ") in (";
+
+        for ($i = 0; $i < count(reset($wheres)); $i++) {
+            $pal = [];
+            $tmp = array_column($wheres, $i);
+            foreach ($tmp as $v) {
+                $pal[] = '?';
+                $bindings[] = $v;
+            }
+            $updateSql .= '(' . implode(',', $pal) . '),';
+        }
+        $updateSql = rtrim($updateSql, ',');
+        $updateSql .= ')';
+        return $conn->createCommand($updateSql, $bindings)->execute();
     }
 
     public static function deleteSeveral(BaseActiveRecord $model, array $arrayColumns): int
