@@ -11,6 +11,7 @@ use Rabbit\DB\Expression;
 use Rabbit\DB\JsonExpression;
 use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Core\UserException;
+use Rabbit\Base\Exception\InvalidArgumentException;
 use Rabbit\Base\Helper\ArrayHelper;
 
 /**
@@ -135,6 +136,9 @@ class ARHelper
             foreach ($arrayColumns as $data) {
                 $refSql = '';
                 foreach ($referenceColumns as $i => $ref) {
+                    if (!isset($data[$ref])) {
+                        throw new InvalidArgumentException("data has no filed: $ref!" . PHP_EOL . json_encode($data));
+                    }
                     $refSql .= " `" . $ref . "` = ? and";
                     $value = isset($columnSchemas[$ref]) ? $columnSchemas[$ref]->dbTypecast($data[$ref]) : $data[$ref];
                     if ($value instanceof Expression) {
