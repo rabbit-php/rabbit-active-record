@@ -141,15 +141,10 @@ class ARHelper
                     }
                     $refSql .= " `" . $ref . "` = ? and";
                     $value = isset($columnSchemas[$ref]) ? $columnSchemas[$ref]->dbTypecast($data[$ref]) : $data[$ref];
-                    if ($value instanceof Expression) {
-                        foreach ($value->params as  $v) {
-                            $wheres[$i][] = $bindings[] = $v;
-                        }
-                    } elseif ($value instanceof JsonExpression) {
-                        $wheres[$i][] = $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
-                    } else {
-                        $wheres[$i][] = $bindings[] = $value;
+                    if (!is_string($value) && !is_int($value) && !is_float($value)) {
+                        throw new InvalidArgumentException("$ref value is not support!" . PHP_EOL . json_encode($data));
                     }
+                    $wheres[$i][] = $bindings[] = $value;
                 }
                 $refSql = rtrim($refSql, 'and');
                 $setSql .= "WHEN $refSql THEN ? ";
