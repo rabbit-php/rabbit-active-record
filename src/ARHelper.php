@@ -144,11 +144,19 @@ class ARHelper
                     if (!is_string($value) && !is_int($value) && !is_float($value)) {
                         throw new InvalidArgumentException("$ref value is not support!" . PHP_EOL . json_encode($data));
                     }
-                    $wheres[$i][] = $bindings[] = $value;
+                    $bindings[] = $value;
+                    if (!isset($wheres[$i]) || !in_array($value, $wheres[$i])) {
+                        $wheres[$i][] = $value;
+                    }
                 }
                 $refSql = rtrim($refSql, 'and');
                 $setSql .= "WHEN $refSql THEN ? ";
-                $bindings[] = $data[$uColumn];
+                $value = isset($columnSchemas[$uColumn]) ? $columnSchemas[$uColumn]->dbTypecast($data[$uColumn]) : $data[$uColumn];
+                if ($value instanceof JsonExpression) {
+                    $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
+                } else {
+                    $bindings[] = $value;
+                }
             }
             $setSql .= "ELSE `" . $uColumn . "` END ";
             $sets[] = $setSql;
@@ -235,7 +243,7 @@ class ARHelper
                 $body = [$body];
             }
             if ($onlyUpdate) {
-                $result = self::updateSeveral($model, $when);
+                $result = self::updateSeveral($model, $body, $when);
             } elseif (!$batch) {
                 $result = [];
                 $exists = self::findExists($model, $body);
