@@ -261,14 +261,18 @@ class ARHelper
     public static function delete(BaseActiveRecord $model, array $body): int
     {
         if (ArrayHelper::isIndexed($body)) {
-            $result = self::deleteSeveral($model, $body);
+            return self::deleteSeveral($model, $body);
         } else {
-            $result = $model::deleteAll(DBHelper::Search((new Query()), $body)->where);
+            $keys = $model::primaryKey();
+            foreach ($body as $key) {
+                if (array_key_exists($key, $keys)) {
+                    $model->load($body, '');
+                    return $model->delete();
+                } elseif (str_contains(strtolower($key), 'where')) {
+                    return $model::deleteAll(DBHelper::Search((new Query()), $body)->where);
+                }
+            }
         }
-        if ($result === false) {
-            throw new Exception('Failed to delete the object for unknown reason.');
-        }
-        return $result;
     }
 
     private static function createModel(BaseActiveRecord $model, array $body): array
