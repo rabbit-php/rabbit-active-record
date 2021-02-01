@@ -110,12 +110,7 @@ class ARHelper
             $i++;
         }
         $withUpdate && $updates && $sql .= " on duplicate key update " . implode(', ', $updates);
-        try {
-            return $conn->createCommand($sql, $params)->execute();
-        } catch (Throwable $e) {
-            var_dump($tableArray);
-            throw $e;
-        }
+        return $conn->createCommand($sql, $params)->execute();
     }
 
     public static function updateSeveral(BaseActiveRecord $model, array $arrayColumns, array $when = null): int
