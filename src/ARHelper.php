@@ -13,6 +13,7 @@ use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Core\UserException;
 use Rabbit\Base\Exception\InvalidArgumentException;
 use Rabbit\Base\Helper\ArrayHelper;
+use Throwable;
 
 /**
  * Class ARHelper
@@ -79,6 +80,7 @@ class ARHelper
                     }
                 }
             }
+            ksort($tableArray);
             foreach ($tableArray as $name => $value) {
                 if (!$i) {
                     $names[] = $conn->quoteColumnName($name);
@@ -92,7 +94,7 @@ class ARHelper
                     }
                 } elseif ($value instanceof JsonExpression) {
                     $placeholders[] = '?';
-                    $params[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
+                    $params[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value->getValue());
                 } else {
                     $placeholders[] = '?';
                     $params[] = $value;
@@ -108,7 +110,12 @@ class ARHelper
             $i++;
         }
         $withUpdate && $updates && $sql .= " on duplicate key update " . implode(', ', $updates);
-        return $conn->createCommand($sql, $params)->execute();
+        try {
+            return $conn->createCommand($sql, $params)->execute();
+        } catch (Throwable $e) {
+            var_dump($tableArray);
+            throw $e;
+        }
     }
 
     public static function updateSeveral(BaseActiveRecord $model, array $arrayColumns, array $when = null): int
