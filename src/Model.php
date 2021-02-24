@@ -453,7 +453,7 @@ class Model extends ModelModel implements StaticInstanceInterface, IteratorAggre
      * @throws InvalidConfigException
      * @throws ReflectionException
      */
-    public function load(array $data, string $formName = null): bool
+    public function load(array $data, string $formName = ''): bool
     {
         $scope = $formName ?? $this->formName();
         if ($scope === '' && !empty($data)) {
