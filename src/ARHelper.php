@@ -13,7 +13,6 @@ use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Core\UserException;
 use Rabbit\Base\Exception\InvalidArgumentException;
 use Rabbit\Base\Helper\ArrayHelper;
-use Throwable;
 
 /**
  * Class ARHelper
@@ -116,6 +115,9 @@ class ARHelper
 
     public static function updateSeveral(BaseActiveRecord $model, array $arrayColumns, array $when = null): int
     {
+        if (empty($arrayColumns)) {
+            return 0;
+        }
         $updateSql = '';
         if (!ArrayHelper::isIndexed($arrayColumns)) {
             $arrayColumns = [$arrayColumns];
