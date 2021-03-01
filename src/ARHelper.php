@@ -82,6 +82,7 @@ class ARHelper
             }
             ksort($tableArray);
             foreach ($tableArray as $name => $value) {
+                $value = $item[$name];
                 if (!$i) {
                     $names[] = $conn->quoteColumnName($name);
                     $withUpdate && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
@@ -152,13 +153,16 @@ class ARHelper
                     }
                 }
                 $refSql = rtrim($refSql, 'and');
-                $setSql .= "WHEN $refSql THEN ? ";
                 $value = isset($columnSchemas[$uColumn]) ? $columnSchemas[$uColumn]->dbTypecast($data[$uColumn]) : $data[$uColumn];
                 if ($value instanceof JsonExpression) {
                     $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
+                } elseif ($value instanceof Expression) {
+                    $setSql .= "WHEN $refSql THEN {$value->expression} ";
+                    continue;
                 } else {
                     $bindings[] = $value;
                 }
+                $setSql .= "WHEN $refSql THEN ? ";
             }
             $setSql .= "ELSE `" . $uColumn . "` END ";
             $sets[] = $setSql;
