@@ -13,7 +13,6 @@ use ArrayAccess;
 use ArrayIterator;
 use IteratorAggregate;
 use Rabbit\Base\App;
-use Rabbit\Base\Core\BaseObject;
 use Rabbit\Base\Core\StaticInstanceInterface;
 use Rabbit\Base\Core\StaticInstanceTrait;
 use Rabbit\Base\Exception\InvalidArgumentException;
