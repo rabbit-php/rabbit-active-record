@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
+use Rabbit\Base\Core\Context;
 use Rabbit\DB\Query;
 use Rabbit\DB\DBHelper;
 use Rabbit\DB\Exception;
@@ -13,6 +14,7 @@ use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Core\UserException;
 use Rabbit\Base\Exception\InvalidArgumentException;
 use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\Pool\ConnectionInterface;
 
 /**
  * Class ARHelper
@@ -423,5 +425,38 @@ class ARHelper
                 }
         }
         return null;
+    }
+
+    public static function getModel(string $table, string $db): BaseActiveRecord
+    {
+        return new class($table, $db) extends ActiveRecord
+        {
+            /**
+             *  constructor.
+             * @param string $tableName
+             * @param string $dbName
+             */
+            public function __construct(string $tableName, string $dbName)
+            {
+                Context::set(md5(get_called_class() . 'tableName'), $tableName);
+                Context::set(md5(get_called_class() . 'dbName'), $dbName);
+            }
+
+            /**
+             * @return mixed|string
+             */
+            public static function tableName(): string
+            {
+                return Context::get(md5(get_called_class() . 'tableName'));
+            }
+
+            /**
+             * @return ConnectionInterface
+             */
+            public static function getDb(): ConnectionInterface
+            {
+                return getDI('db')->getConnection(Context::get(md5(get_called_class() . 'dbName')));
+            }
+        };
     }
 }
