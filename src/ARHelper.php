@@ -86,7 +86,7 @@ class ARHelper
                 $value = $item[$name];
                 if (!$i) {
                     $names[] = $conn->quoteColumnName($name);
-                    $withUpdate && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
+                    $withUpdate && !in_array($name, $keys ?? []) && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
                 }
                 $value = isset($columnSchemas[$name]) ? $columnSchemas[$name]->dbTypecast($value) : $value;
                 if ($value instanceof Expression) {
