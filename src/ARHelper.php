@@ -139,37 +139,39 @@ class ARHelper
         $bindings = [];
         $wheres = [];
         foreach ($updateColumn as $uColumn) {
-            $setSql = "`" . $uColumn . "` = CASE ";
-            foreach ($arrayColumns as $data) {
-                $refSql = '';
-                foreach ($referenceColumns as $i => $ref) {
-                    if (!isset($data[$ref])) {
-                        throw new InvalidArgumentException("data has no filed: $ref!" . PHP_EOL . json_encode($data));
+            if ($columnSchemas[$uColumn] ?? false) {
+                $setSql = "`" . $uColumn . "` = CASE ";
+                foreach ($arrayColumns as $data) {
+                    $refSql = '';
+                    foreach ($referenceColumns as $i => $ref) {
+                        if (!isset($data[$ref])) {
+                            throw new InvalidArgumentException("data has no filed: $ref!" . PHP_EOL . json_encode($data));
+                        }
+                        $refSql .= " `" . $ref . "` = ? and";
+                        $value = isset($columnSchemas[$ref]) ? $columnSchemas[$ref]->dbTypecast($data[$ref]) : $data[$ref];
+                        if (!is_string($value) && !is_int($value) && !is_float($value)) {
+                            throw new InvalidArgumentException("$ref value is not support!" . PHP_EOL . json_encode($data));
+                        }
+                        $bindings[] = $value;
+                        if (!isset($wheres[$i]) || !in_array($value, $wheres[$i])) {
+                            $wheres[$i][] = $value;
+                        }
                     }
-                    $refSql .= " `" . $ref . "` = ? and";
-                    $value = isset($columnSchemas[$ref]) ? $columnSchemas[$ref]->dbTypecast($data[$ref]) : $data[$ref];
-                    if (!is_string($value) && !is_int($value) && !is_float($value)) {
-                        throw new InvalidArgumentException("$ref value is not support!" . PHP_EOL . json_encode($data));
+                    $refSql = rtrim($refSql, 'and');
+                    $value = isset($columnSchemas[$uColumn]) ? $columnSchemas[$uColumn]->dbTypecast($data[$uColumn]) : $data[$uColumn];
+                    if ($value instanceof JsonExpression) {
+                        $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
+                    } elseif ($value instanceof Expression) {
+                        $setSql .= "WHEN $refSql THEN {$value->expression} ";
+                        continue;
+                    } else {
+                        $bindings[] = $value;
                     }
-                    $bindings[] = $value;
-                    if (!isset($wheres[$i]) || !in_array($value, $wheres[$i])) {
-                        $wheres[$i][] = $value;
-                    }
+                    $setSql .= "WHEN $refSql THEN ? ";
                 }
-                $refSql = rtrim($refSql, 'and');
-                $value = isset($columnSchemas[$uColumn]) ? $columnSchemas[$uColumn]->dbTypecast($data[$uColumn]) : $data[$uColumn];
-                if ($value instanceof JsonExpression) {
-                    $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
-                } elseif ($value instanceof Expression) {
-                    $setSql .= "WHEN $refSql THEN {$value->expression} ";
-                    continue;
-                } else {
-                    $bindings[] = $value;
-                }
-                $setSql .= "WHEN $refSql THEN ? ";
+                $setSql .= "ELSE `" . $uColumn . "` END ";
+                $sets[] = $setSql;
             }
-            $setSql .= "ELSE `" . $uColumn . "` END ";
-            $sets[] = $setSql;
         }
         $updateSql .= implode(', ', $sets);
         $updateSql = rtrim($updateSql, ", ") . " where (" . implode(',', $referenceColumns) . ") in (";
