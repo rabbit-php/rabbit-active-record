@@ -18,7 +18,11 @@ use Rabbit\Pool\ConnectionInterface;
 
 class ARHelper
 {
-    public static function otherInsert(BaseActiveRecord $model, array $arrayColumns, string $insertType = 'INSERT INTO'): int
+    const INSERT_REPLACE = 'REPLACE';
+    const INSERT_DEFAULT = 'INSERT';
+    const INSERT_IGNORE = 'INSERT IGNORE';
+
+    public static function typeInsert(BaseActiveRecord $model, array $arrayColumns, string $insertType = self::INSERT_DEFAULT): int
     {
         if (empty($arrayColumns)) {
             return 0;
@@ -74,7 +78,7 @@ class ARHelper
                 }
             }
             if (!$i) {
-                $sql = $insertType . ' ' . $conn->quoteTableName($table::tableName())
+                $sql = $insertType . ' INTO ' . $conn->quoteTableName($table::tableName())
                     . ' (' . implode(', ', $names) . ') VALUES ('
                     . implode(', ', $placeholders) . ')';
             } else {
