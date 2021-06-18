@@ -16,12 +16,75 @@ use Rabbit\Base\Exception\InvalidArgumentException;
 use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\Pool\ConnectionInterface;
 
-/**
- * Class ARHelper
- * @package Rabbit\ActiveRecord
- */
 class ARHelper
 {
+    public static function otherInsert(BaseActiveRecord $model, array $arrayColumns, string $insertType = 'INSERT INTO'): int
+    {
+        if (empty($arrayColumns)) {
+            return 0;
+        }
+        $conn = $model::getDb();
+        $sql = '';
+        $params = [];
+        $i = 0;
+        if (!ArrayHelper::isIndexed($arrayColumns)) {
+            $arrayColumns = [$arrayColumns];
+        }
+        $keys = $model::primaryKey();
+
+        $schema = $conn->getSchema();
+        $tableSchema = $schema->getTableSchema($model::tableName());
+        $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
+
+        foreach ($arrayColumns as $item) {
+            $table = clone $model;
+            $table->load($item, '');
+            $names = array();
+            $placeholders = array();
+            $table->isNewRecord = false;
+            if (!$table->validate()) {
+                throw new UserException(implode(PHP_EOL, $table->getFirstErrors()));
+            }
+            $tableArray = $table->toArray();
+            if ($keys) {
+                foreach ($keys as $key) {
+                    if (isset($item[$key]) && (!isset($item[$key]) || $tableArray[$key] === null)) {
+                        $tableArray[$key] = $item[$key];
+                    }
+                }
+            }
+            ksort($tableArray);
+            foreach ($tableArray as $name => $value) {
+                $value = $item[$name];
+                if (!$i) {
+                    $names[] = $conn->quoteColumnName($name);
+                }
+                $value = isset($columnSchemas[$name]) ? $columnSchemas[$name]->dbTypecast($value) : $value;
+                if ($value instanceof Expression) {
+                    $placeholders[] = $value->expression;
+                    foreach ($value->params as $n => $v) {
+                        $params[$n] = $v;
+                    }
+                } elseif ($value instanceof JsonExpression) {
+                    $placeholders[] = '?';
+                    $params[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value->getValue());
+                } else {
+                    $placeholders[] = '?';
+                    $params[] = $value;
+                }
+            }
+            if (!$i) {
+                $sql = $insertType . ' ' . $conn->quoteTableName($table::tableName())
+                    . ' (' . implode(', ', $names) . ') VALUES ('
+                    . implode(', ', $placeholders) . ')';
+            } else {
+                $sql .= ',(' . implode(', ', $placeholders) . ')';
+            }
+            $i++;
+        }
+        return $conn->createCommand($sql, $params)->execute();
+    }
+
     public static function saveSeveral(BaseActiveRecord $model, array $arrayColumns, bool $withUpdate = true): int
     {
         if (empty($arrayColumns)) {
