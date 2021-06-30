@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
@@ -288,7 +289,7 @@ trait ActiveRelationTrait
 
         $link = array_values(isset($viaQuery) ? $viaQuery->link : $this->link);
         foreach ($primaryModels as $i => $primaryModel) {
-            if ($this->multiple && count($link) === 1 && is_array($keys = $primaryModel[reset($link)])) {
+            if ($this->multiple && count($link) === 1 && ($tmp = reset($link)) && is_array($keys = is_array($tmp) ? $tmp[key($tmp)]($primaryModel[key($tmp)]) : $primaryModel[$tmp])) {
                 $value = [];
                 foreach ($keys as $key) {
                     $key = $this->normalizeModelKey($key);
@@ -498,10 +499,17 @@ trait ActiveRelationTrait
         if (count($attributes) === 1) {
             // single key
             $attribute = reset($this->link);
+            if (is_array($attribute)) {
+                $key = key($attribute);
+                $call = $attribute[$key];
+                $attribute = $key;
+            }
             foreach ($models as $model) {
                 if (($value = $model[$attribute]) !== null) {
                     if (is_array($value)) {
                         $values = array_merge($values, $value);
+                    } elseif ($call ?? false && is_callable($call)) {
+                        $values = $call($value);
                     } else {
                         $values[] = $value;
                     }
@@ -521,6 +529,14 @@ trait ActiveRelationTrait
             foreach ($models as $model) {
                 $v = [];
                 foreach ($prefixedLink as $attribute => $link) {
+                    if (is_array($link)) {
+                        $key = key($link);
+                        $call = $link[$key];
+                        if (is_callable($call)) {
+                            $v[$attribute] = $call($model[$key]);
+                            continue;
+                        }
+                    }
                     $v[$attribute] = $model[$link];
                 }
                 $values[] = $v;
