@@ -52,7 +52,7 @@ class ARHelper
             $tableArray = $table->toArray();
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (isset($item[$key]) && (!isset($item[$key]) || $tableArray[$key] === null)) {
+                    if (($item[$key] ?? false) && $tableArray[$key] === null) {
                         $tableArray[$key] = $item[$key];
                     }
                 }
@@ -63,7 +63,7 @@ class ARHelper
                 if (!$i) {
                     $names[] = $conn->quoteColumnName($name);
                 }
-                $value = isset($columnSchemas[$name]) ? $columnSchemas[$name]->dbTypecast($value) : $value;
+                $value = ($columnSchemas[$name] ?? false) ? $columnSchemas[$name]->dbTypecast($value) : $value;
                 if ($value instanceof Expression) {
                     $placeholders[] = $value->expression;
                     foreach ($value->params as $n => $v) {
@@ -110,11 +110,16 @@ class ARHelper
         foreach ($arrayColumns as $item) {
             $table = clone $model;
             $table->load($item, '');
+            if (!$table->validate()) {
+                throw new UserException(implode(PHP_EOL, $table->getFirstErrors()));
+            }
+            $tableArray = $table->toArray();
+            $item = array_merge($item, $tableArray);
             //关联模型
             foreach ($table->getRelations() as $child => [$key, $val, $delete]) {
-                if (isset($item[$key])) {
+                if ($item[$key] ?? false) {
                     $child_model = new $child();
-                    if (!isset($item[$key][0])) {
+                    if (!ArrayHelper::isIndexed($item[$key])) {
                         $item[$key] = [$item[$key]];
                     }
                     foreach ($val as $c_attr => $p_attr) {
@@ -137,13 +142,9 @@ class ARHelper
             $names = array();
             $placeholders = array();
             $table->isNewRecord = false;
-            if (!$table->validate()) {
-                throw new UserException(implode(PHP_EOL, $table->getFirstErrors()));
-            }
-            $tableArray = $table->toArray();
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (isset($item[$key]) && (!isset($item[$key]) || $tableArray[$key] === null)) {
+                    if (($item[$key] ?? false) && $tableArray[$key] === null) {
                         $tableArray[$key] = $item[$key];
                     }
                 }
@@ -155,7 +156,7 @@ class ARHelper
                     $names[] = $conn->quoteColumnName($name);
                     $withUpdate && !in_array($name, $keys ?? []) && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
                 }
-                $value = isset($columnSchemas[$name]) ? $columnSchemas[$name]->dbTypecast($value) : $value;
+                $value = ($columnSchemas[$name] ?? false) ? $columnSchemas[$name]->dbTypecast($value) : $value;
                 if ($value instanceof Expression) {
                     $placeholders[] = $value->expression;
                     foreach ($value->params as $n => $v) {
@@ -211,21 +212,21 @@ class ARHelper
                 foreach ($arrayColumns as $data) {
                     $refSql = '';
                     foreach ($referenceColumns as $i => $ref) {
-                        if (!isset($data[$ref])) {
+                        if (!($data[$ref] ?? false)) {
                             throw new InvalidArgumentException("data has no filed: $ref!" . PHP_EOL . json_encode($data));
                         }
                         $refSql .= " `" . $ref . "` = ? and";
-                        $value = isset($columnSchemas[$ref]) ? $columnSchemas[$ref]->dbTypecast($data[$ref]) : $data[$ref];
+                        $value = ($columnSchemas[$ref] ?? false) ? $columnSchemas[$ref]->dbTypecast($data[$ref]) : $data[$ref];
                         if (!is_string($value) && !is_int($value) && !is_float($value)) {
                             throw new InvalidArgumentException("$ref value is not support!" . PHP_EOL . json_encode($data));
                         }
                         $bindings[] = $value;
-                        if (!isset($wheres[$i]) || !in_array($value, $wheres[$i])) {
+                        if (!($wheres[$i] ?? false) || !in_array($value, $wheres[$i])) {
                             $wheres[$i][] = $value;
                         }
                     }
                     $refSql = rtrim($refSql, 'and');
-                    $value = isset($columnSchemas[$uColumn]) ? $columnSchemas[$uColumn]->dbTypecast($data[$uColumn]) : $data[$uColumn];
+                    $value = ($columnSchemas[$uColumn] ?? false) ? $columnSchemas[$uColumn]->dbTypecast($data[$uColumn]) : $data[$uColumn];
                     if ($value instanceof JsonExpression) {
                         $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
                     } elseif ($value instanceof Expression) {
@@ -272,16 +273,16 @@ class ARHelper
             $model->load($item, '');
             $model->isNewRecord = false;
             foreach ($model->getRelations() as $child => [$key]) {
-                if (isset($item[$key])) {
+                if ($item[$key] ?? false) {
                     $child_model = new $child();
-                    if (self::deleteSeveral($child_model, $item[$key]) === false) {
+                    if (self::deleteSeveral($child_model, $item[$key]) === 0) {
                         return 0;
                     }
                 }
             }
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (isset($item[$key])) {
+                    if ($item[$key] ?? false) {
                         $condition[$key][] = $item[$key];
                     }
                 }
@@ -312,7 +313,7 @@ class ARHelper
 
     public static function update(BaseActiveRecord $model, array $body, bool $onlyUpdate = false, array $when = null, bool $batch = true): array
     {
-        if (isset($body['edit']) && $body['edit']) {
+        if (($body['edit'] ?? false) && $body['edit']) {
             $result = $model->updateAll($body['edit'], DBHelper::Search((new Query()),  ArrayHelper::getValue($body, 'where', []))->where);
             if ($result === false) {
                 throw new Exception('Failed to update the object for unknown reason.');
@@ -341,17 +342,34 @@ class ARHelper
     {
         if (ArrayHelper::isIndexed($body)) {
             return self::deleteSeveral($model, $body);
-        } else {
-            $keys = $model::primaryKey();
-            foreach ($body as $key) {
-                if (array_key_exists($key, $keys)) {
-                    $model->load($body, '');
-                    return $model->delete();
-                } elseif (str_contains(strtolower($key), 'where')) {
-                    return $model::deleteAll(DBHelper::Search((new Query()), $body)->where);
+        }
+        $keys = array_keys($body);
+        if (array_intersect($keys, $model::primaryKey())) {
+            $conditions = [];
+            foreach ($model::primaryKey() as $key) {
+                if ($body[$key] ?? false) {
+                    $conditions[$key] = $body[$key];
                 }
             }
+            if (empty($conditions)) {
+                return 0;
+            }
+            foreach ($model->getRelations() as $child => [$key]) {
+                if ($body[$key] ?? false) {
+                    $child_model = new $child();
+                    if ($child_model::deleteAll($body[$key]) === 0) {
+                        return 0;
+                    }
+                }
+            }
+            return $model::deleteAll($conditions);
         }
+        foreach ($keys as $key) {
+            if (str_contains(strtolower($key), 'where')) {
+                return $model::deleteAll(DBHelper::Search((new Query()), $body)->where);
+            }
+        }
+        return 0;
     }
 
     private static function createModel(BaseActiveRecord $model, array $body): array
@@ -372,7 +390,7 @@ class ARHelper
         $result = [];
         //关联模型
         foreach ($model->getRelations() as $child => [$key, $val]) {
-            if (isset($body[$key])) {
+            if ($body[$key] ?? false) {
                 if (ArrayHelper::isAssociative($body[$key])) {
                     $body[$key] = [$body[$key]];
                 }
@@ -431,10 +449,10 @@ class ARHelper
         $result = [];
         //关联模型
         foreach ($model->getRelations() as $child => [$key, $val, $delete]) {
-            if (isset($body[$key])) {
+            if ($body[$key] ?? false) {
                 $child_model = new $child();
-                if (isset($params['edit']) && $params['edit']) {
-                    $result[$key] = self::update($child_model, $params);
+                if (($body['edit'] ?? false) && $body['edit']) {
+                    $result[$key] = self::update($child_model, $body);
                 } else {
                     if (ArrayHelper::isAssociative($body[$key])) {
                         $params = [$body[$key]];
@@ -485,7 +503,7 @@ class ARHelper
         foreach ($exists as $exist) {
             if (empty($conditions))
                 foreach ($conditions as $key) {
-                    if (isset($body[$key]) && $body[$key] == $exist[$key]) {
+                    if (($body[$key] ?? false) && $body[$key] === $exist[$key]) {
                         $existCount++;
                     }
                     if ($existCount === count($conditions)) {
