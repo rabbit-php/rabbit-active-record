@@ -294,11 +294,8 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     /**
      * {@inheritdoc}
      */
-    protected function queryScalar($selectExpression): ?string
+    protected function queryScalar($selectExpression)
     {
-        /* @var $modelClass ActiveRecord */
-        $modelClass = $this->modelClass;
-
         if ($this->sql === null) {
             return parent::queryScalar($selectExpression);
         }
