@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
-use Rabbit\Base\Core\Context;
 use Rabbit\DB\Query;
 use Rabbit\DB\DBHelper;
 use Rabbit\DB\Exception;
@@ -27,17 +26,17 @@ class ARHelper
         if (empty($arrayColumns)) {
             return 0;
         }
-        $conn = $model::getDb();
+        $conn = $model->getDb();
         $sql = '';
         $params = [];
         $i = 0;
         if (!ArrayHelper::isIndexed($arrayColumns)) {
             $arrayColumns = [$arrayColumns];
         }
-        $keys = $model::primaryKey();
+        $keys = $model->primaryKey();
 
         $schema = $conn->getSchema();
-        $tableSchema = $schema->getTableSchema($model::tableName());
+        $tableSchema = $schema->getTableSchema($model->tableName());
         $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
 
         foreach ($arrayColumns as $item) {
@@ -78,7 +77,7 @@ class ARHelper
                 }
             }
             if (!$i) {
-                $sql = $insertType . ' INTO ' . $conn->quoteTableName($table::tableName())
+                $sql = $insertType . ' INTO ' . $conn->quoteTableName($table->tableName())
                     . ' (' . implode(', ', $names) . ') VALUES ('
                     . implode(', ', $placeholders) . ')';
             } else {
@@ -94,17 +93,17 @@ class ARHelper
         if (empty($arrayColumns)) {
             return 0;
         }
-        $conn = $model::getDb();
+        $conn = $model->getDb();
         $sql = '';
         $params = [];
         $i = 0;
         if (!ArrayHelper::isIndexed($arrayColumns)) {
             $arrayColumns = [$arrayColumns];
         }
-        $keys = $model::primaryKey();
+        $keys = $model->primaryKey();
 
         $schema = $conn->getSchema();
-        $tableSchema = $schema->getTableSchema($model::tableName());
+        $tableSchema = $schema->getTableSchema($model->tableName());
         $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
 
         foreach ($arrayColumns as $item) {
@@ -171,7 +170,7 @@ class ARHelper
                 }
             }
             if (!$i) {
-                $sql = 'INSERT INTO ' . $conn->quoteTableName($table::tableName())
+                $sql = 'INSERT INTO ' . $conn->quoteTableName($table->tableName())
                     . ' (' . implode(', ', $names) . ') VALUES ('
                     . implode(', ', $placeholders) . ')';
             } else {
@@ -194,15 +193,15 @@ class ARHelper
         }
         $firstRow = current($arrayColumns);
         $updateColumn = array_keys($firstRow);
-        $conn = $model::getDb();
+        $conn = $model->getDb();
         $schema = $conn->getSchema();
-        $tableSchema = $schema->getTableSchema($model::tableName());
+        $tableSchema = $schema->getTableSchema($model->tableName());
         $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
-        $referenceColumns = $when ?? $model::primaryKey();
+        $referenceColumns = $when ?? $model->primaryKey();
         foreach ($referenceColumns as $column) {
             unset($updateColumn[array_search($column, $updateColumn)]);
         }
-        $updateSql = "UPDATE " .  $model::tableName() . " SET ";
+        $updateSql = "UPDATE " .  $model->tableName() . " SET ";
         $sets = [];
         $bindings = [];
         $wheres = [];
@@ -264,7 +263,7 @@ class ARHelper
             return 0;
         }
         $result = false;
-        $keys = $model::primaryKey();
+        $keys = $model->primaryKey();
         $condition = [];
         if (ArrayHelper::isAssociative($arrayColumns)) {
             $arrayColumns = [$arrayColumns];
@@ -289,7 +288,7 @@ class ARHelper
             }
         }
         if ($condition) {
-            $result = $model::deleteAll($condition);
+            $result = $model->deleteAll($condition);
         }
         return (int)$result;
     }
@@ -328,7 +327,7 @@ class ARHelper
                 $result = [];
                 $exists = self::findExists($model, $body);
                 foreach ($body as $params) {
-                    $res = self::updateModel(clone $model, $params, self::checkExist($params, $exists, $model::primaryKey()));
+                    $res = self::updateModel(clone $model, $params, self::checkExist($params, $exists, $model->primaryKey()));
                     $result[] = $res;
                 }
             } else {
@@ -344,9 +343,9 @@ class ARHelper
             return self::deleteSeveral($model, $body);
         }
         $keys = array_keys($body);
-        if (array_intersect($keys, $model::primaryKey())) {
+        if (array_intersect($keys, $model->primaryKey())) {
             $conditions = [];
-            foreach ($model::primaryKey() as $key) {
+            foreach ($model->primaryKey() as $key) {
                 if ($body[$key] ?? false) {
                     $conditions[$key] = $body[$key];
                 }
@@ -357,16 +356,16 @@ class ARHelper
             foreach ($model->getRelations() as $child => [$key]) {
                 if ($body[$key] ?? false) {
                     $child_model = new $child();
-                    if ($child_model::deleteAll($body[$key]) === 0) {
+                    if ($child_model->deleteAll($body[$key]) === 0) {
                         return 0;
                     }
                 }
             }
-            return $model::deleteAll($conditions);
+            return $model->deleteAll($conditions);
         }
         foreach ($keys as $key) {
             if (str_contains(strtolower($key), 'where')) {
-                return $model::deleteAll(DBHelper::Search((new Query()), $body)->where);
+                return $model->deleteAll(DBHelper::Search((new Query()), $body)->where);
             }
         }
         return 0;
@@ -413,9 +412,9 @@ class ARHelper
         return $res;
     }
 
-    private static function findExists(BaseActiveRecord $model, array $body, array $condition = []): array
+    protected static function findExists(BaseActiveRecord $model, array $body, array $condition = []): array
     {
-        $keys = $model::primaryKey();
+        $keys = $model->primaryKey();
         if (ArrayHelper::isAssociative($body)) {
             $body = [$body];
         }
@@ -427,7 +426,7 @@ class ARHelper
             }
         }
         if ($condition !== [] && count($keys) === count($condition)) {
-            return $model::find()->where($condition)->asArray()->all();
+            return $model->find()->where($condition)->all();
         }
         return [];
     }
@@ -479,7 +478,7 @@ class ARHelper
                                 self::checkExist(
                                     $param,
                                     $exists,
-                                    $child_model::primaryKey()
+                                    $child_model->primaryKey()
                                 )
                             );
                         }
@@ -514,35 +513,14 @@ class ARHelper
         return null;
     }
 
-    public static function getModel(string $table, string $db): BaseActiveRecord
+    public static function getModel(string $table, string|ConnectionInterface $db): BaseActiveRecord
     {
         return new class($table, $db) extends ActiveRecord
         {
-            /**
-             *  constructor.
-             * @param string $tableName
-             * @param string $dbName
-             */
-            public function __construct(string $tableName, string $dbName)
+            public function __construct(string $tableName, string|ConnectionInterface $dbName)
             {
-                Context::set(md5(get_called_class() . 'tableName'), $tableName);
-                Context::set(md5(get_called_class() . 'dbName'), $dbName);
-            }
-
-            /**
-             * @return mixed|string
-             */
-            public static function tableName(): string
-            {
-                return Context::get(md5(get_called_class() . 'tableName'));
-            }
-
-            /**
-             * @return ConnectionInterface
-             */
-            public static function getDb(): ConnectionInterface
-            {
-                return getDI('db')->getConnection(Context::get(md5(get_called_class() . 'dbName')));
+                $this->tableName = $tableName;
+                $this->db = is_string($dbName) ? getDI('db')->get($dbName) : $dbName;
             }
         };
     }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * @link http://www.yiiframework.com/
@@ -8,82 +9,12 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
-use Psr\SimpleCache\InvalidArgumentException;
-use Rabbit\Base\Exception\InvalidConfigException;
-use Throwable;
-
-/**
- * ActiveQueryTrait implements the common methods and properties for active record query classes.
- *
- * @author Qiang Xue <qiang.xue@gmail.com>
- * @author Carsten Brandt <mail@cebe.cc>
- * @since 2.0
- */
 trait ActiveQueryTrait
 {
-    /**
-     * @var string the name of the ActiveRecord class.
-     */
-    public ?string $modelClass;
-    /**
-     * @var array a list of relations that this query should be performed with
-     */
-    public ?array $with;
-    /**
-     * @var bool whether to return each record as an array. If false (default), an object
-     * of [[modelClass]] will be created to represent each record.
-     */
-    public bool $asArray = true;
+    public ?string $modelClass = null;
 
+    public ?array $with = null;
 
-    /**
-     * Sets the [[asArray]] property.
-     * @param bool $value whether to return the query results in terms of arrays instead of Active Records.
-     * @return $this the query object itself
-     */
-    public function asArray(bool $value = true): self
-    {
-        $this->asArray = $value;
-        return $this;
-    }
-
-    /**
-     * Specifies the relations with which this query should be performed.
-     *
-     * The parameters to this method can be either one or multiple strings, or a single array
-     * of relation names and the optional callbacks to customize the relations.
-     *
-     * A relation name can refer to a relation defined in [[modelClass]]
-     * or a sub-relation that stands for a relation of a related record.
-     * For example, `orders.address` means the `address` relation defined
-     * in the model class corresponding to the `orders` relation.
-     *
-     * The following are some usage examples:
-     *
-     * ```php
-     * // find customers together with their orders and country
-     * Customer::find()->with('orders', 'country')->all();
-     * // find customers together with their orders and the orders' shipping address
-     * Customer::find()->with('orders.address')->all();
-     * // find customers together with their country and orders of status 1
-     * Customer::find()->with([
-     *     'orders' => function (\rabbit\activerecord\ActiveQuery $query) {
-     *         $query->andWhere('status = 1');
-     *     },
-     *     'country',
-     * ])->all();
-     * ```
-     *
-     * You can call `with()` multiple times. Each call will add relations to the existing ones.
-     * For example, the following two statements are equivalent:
-     *
-     * ```php
-     * Customer::find()->with('orders', 'country')->all();
-     * Customer::find()->with('orders')->with('country')->all();
-     * ```
-     *
-     * @return $this the query object itself
-     */
     public function with(): self
     {
         $with = func_get_args();
@@ -108,63 +39,20 @@ trait ActiveQueryTrait
         return $this;
     }
 
-    /**
-     * Converts found rows into model instances.
-     * @param array $rows
-     * @return array|ActiveRecord[]
-     * @since 2.0.11
-     */
-    protected function createModels(array $rows): array
-    {
-        if ($this->asArray) {
-            return $rows;
-        } else {
-            $models = [];
-            /* @var $class ActiveRecord */
-            $class = $this->modelClass;
-            foreach ($rows as $row) {
-                $model = $class::instantiate();
-                $modelClass = get_class($model);
-                $modelClass::populateRecord($model, $row);
-                $models[] = $model;
-            }
-            return $models;
-        }
-    }
-
-    /**
-     * Finds records corresponding to one or multiple relations and populates them into the primary models.
-     * @param array $with a list of relations that this query should be performed with. Please
-     * refer to [[with()]] for details about specifying this parameter.
-     * @param array|ActiveRecord[] $models the primary models (can be either AR instances or arrays)
-     * @throws InvalidArgumentException
-     * @throws InvalidConfigException
-     * @throws Throwable
-     */
     public function findWith(array $with, array &$models): void
     {
         $primaryModel = reset($models);
         if (!$primaryModel instanceof ActiveRecordInterface) {
             /* @var $modelClass ActiveRecordInterface */
-            $modelClass = $this->modelClass;
-            $primaryModel = $modelClass::instance();
+            $primaryModel = create($this->modelClass);
         }
         $relations = $this->normalizeRelations($primaryModel, $with);
         /* @var $relation ActiveQuery */
         foreach ($relations as $name => $relation) {
-            if ($relation->asArray === null) {
-                // inherit asArray from primary query
-                $relation->asArray($this->asArray);
-            }
             $relation->populateRelation($name, $models);
         }
     }
 
-    /**
-     * @param ActiveRecordInterface $model
-     * @param array $with
-     * @return ActiveQueryInterface[]
-     */
     private function normalizeRelations(ActiveRecordInterface $model, array $with): array
     {
         $relations = [];

@@ -9,67 +9,21 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
-use Throwable;
-use ReflectionException;
 use InvalidArgumentException;
 use Rabbit\Base\Exception\InvalidConfigException;
 
-/**
- * ActiveRelationTrait implements the common methods and properties for active record relational queries.
- *
- * @author Qiang Xue <qiang.xue@gmail.com>
- * @author Carsten Brandt <mail@cebe.cc>
- * @since 2.0
- *
- * @method ActiveRecordInterface one()
- * @method ActiveRecordInterface[] all()
- * @property ActiveRecord $modelClass
- */
 trait ActiveRelationTrait
 {
-    /**
-     * @var bool whether this query represents a relation to more than one record.
-     * This property is only used in relational context. If true, this relation will
-     * populate all query results into AR instances using [[Query::all()|all()]].
-     * If false, only the first row of the results will be retrieved using [[Query::one()|one()]].
-     */
     public ?bool $multiple;
-    /**
-     * @var ActiveRecord the primary model of a relational query.
-     * This is used only in lazy loading with dynamic query options.
-     */
+
     public ?ActiveRecord $primaryModel = null;
-    /**
-     * @var array the columns of the primary and foreign tables that establish a relation.
-     * The array keys must be columns of the table for this relation, and the array values
-     * must be the corresponding columns from the primary table.
-     * Do not prefix or quote the column names as this will be done automatically by Yii.
-     * This property is only used in relational context.
-     */
+
     public ?array $link;
-    /**
-     * @var array|object the query associated with the junction table. Please call [[via()]]
-     * to set this property instead of directly setting it.
-     * This property is only used in relational context.
-     * @see via()
-     */
-    public $via;
-    /**
-     * @var string the name of the relation that is the inverse of this relation.
-     * For example, an order has a customer, which means the inverse of the "customer" relation
-     * is the "orders", and the inverse of the "orders" relation is the "customer".
-     * If this property is set, the primary record(s) will be referenced through the specified relation.
-     * For example, `$customer->orders[0]->customer` and `$customer` will be the same object,
-     * and accessing the customer of an order will not trigger new DB query.
-     * This property is only used in relational context.
-     * @see inverseOf()
-     */
+
+    public null|array|object $via = null;
+
     public ?string $inverseOf = null;
 
-
-    /**
-     * Clones internal objects.
-     */
     public function __clone()
     {
         parent::__clone();
@@ -81,31 +35,6 @@ trait ActiveRelationTrait
         }
     }
 
-    /**
-     * Specifies the relation associated with the junction table.
-     *
-     * Use this method to specify a pivot record/table when declaring a relation in the [[ActiveRecord]] class:
-     *
-     * ```php
-     * class Order extends ActiveRecord
-     * {
-     *    public function getOrderItems() {
-     *        return $this->hasMany(OrderItem::class, ['order_id' => 'id']);
-     *    }
-     *
-     *    public function getItems() {
-     *        return $this->hasMany(Item::class, ['id' => 'item_id'])
-     *                    ->via('orderItems');
-     *    }
-     * }
-     * ```
-     *
-     * @param string $relationName the relation name. This refers to a relation declared in [[primaryModel]].
-     * @param callable $callable a PHP callback for customizing the relation associated with the junction table.
-     * Its signature should be `function($query)`, where `$query` is the query to be customized.
-     * @return $this the relation object itself.
-     * @throws ReflectionException
-     */
     public function via(string $relationName, callable $callable = null): self
     {
         $relation = $this->primaryModel->getRelation($relationName);
@@ -117,68 +46,13 @@ trait ActiveRelationTrait
         return $this;
     }
 
-    /**
-     * Sets the name of the relation that is the inverse of this relation.
-     * For example, a customer has orders, which means the inverse of the "orders" relation is the "customer".
-     * If this property is set, the primary record(s) will be referenced through the specified relation.
-     * For example, `$customer->orders[0]->customer` and `$customer` will be the same object,
-     * and accessing the customer of an order will not trigger a new DB query.
-     *
-     * Use this method when declaring a relation in the [[ActiveRecord]] class, e.g. in Customer model:
-     *
-     * ```php
-     * public function getOrders()
-     * {
-     *     return $this->hasMany(Order::class, ['customer_id' => 'id'])->inverseOf('customer');
-     * }
-     * ```
-     *
-     * This also may be used for Order model, but with caution:
-     *
-     * ```php
-     * public function getCustomer()
-     * {
-     *     return $this->hasOne(Customer::class, ['id' => 'customer_id'])->inverseOf('orders');
-     * }
-     * ```
-     *
-     * in this case result will depend on how order(s) was loaded.
-     * Let's suppose customer has several orders. If only one order was loaded:
-     *
-     * ```php
-     * $orders = Order::find()->where(['id' => 1])->all();
-     * $customerOrders = $orders[0]->customer->orders;
-     * ```
-     *
-     * variable `$customerOrders` will contain only one order. If orders was loaded like this:
-     *
-     * ```php
-     * $orders = Order::find()->with('customer')->where(['customer_id' => 1])->all();
-     * $customerOrders = $orders[0]->customer->orders;
-     * ```
-     *
-     * variable `$customerOrders` will contain all orders of the customer.
-     *
-     * @param string $relationName the name of the relation that is the inverse of this relation.
-     * @return $this the relation object itself.
-     */
     public function inverseOf(string $relationName): self
     {
         $this->inverseOf = $relationName;
         return $this;
     }
 
-    /**
-     * Finds the related records for the specified primary record.
-     * This method is invoked when a relation of an ActiveRecord is being accessed in a lazy fashion.
-     * @param string $name the relation name
-     * @param ActiveRecordInterface|BaseActiveRecord $model the primary model
-     * @return mixed the related record(s)
-     * @throws ReflectionException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
-     * @throws Throwable
-     */
-    public function findFor(string $name, ActiveRecordInterface $model)
+    public function findFor(string $name, ActiveRecordInterface $model): ?array
     {
         if (method_exists($model, 'get' . $name)) {
             $method = new \ReflectionMethod($model, 'get' . $name);
@@ -191,12 +65,7 @@ trait ActiveRelationTrait
         return $this->multiple ? $this->all() : $this->one();
     }
 
-    /**
-     * If applicable, populate the query's primary model into the related records' inverse relationship.
-     * @param array $result the array of related records as generated by [[populate()]]
-     * @since 2.0.9
-     */
-    private function addInverseRelations(array &$result): void
+    protected function addInverseRelations(array &$result): void
     {
         if ($this->inverseOf === null) {
             return;
@@ -211,43 +80,23 @@ trait ActiveRelationTrait
             } else {
                 if (!isset($inverseRelation)) {
                     /* @var $modelClass ActiveRecordInterface */
-                    $modelClass = $this->modelClass;
-                    $inverseRelation = $modelClass::instance()->getRelation($this->inverseOf);
+                    $inverseRelation = create($this->modelClass, ['db' => $this->db])->getRelation($this->inverseOf);
                 }
                 $result[$i][$this->inverseOf] = $inverseRelation->multiple ? [$this->primaryModel] : $this->primaryModel;
             }
         }
     }
 
-    /**
-     * Finds the related records and populates them into the primary models.
-     * @param string $name the relation name
-     * @param array $primaryModels primary models
-     * @return array the related models
-     * @throws InvalidConfigException
-     * @throws Throwable
-     * @throws \Psr\SimpleCache\InvalidArgumentException
-     */
     public function populateRelation(string $name, array &$primaryModels): array
     {
         if (!is_array($this->link)) {
             throw new InvalidConfigException('Invalid link: it must be an array of key-value pairs.');
         }
 
-        if ($this->via instanceof self) {
-            // via junction table
-            /* @var $viaQuery ActiveRelationTrait */
-            $viaQuery = $this->via;
-            $viaModels = $viaQuery->findJunctionRows($primaryModels);
-            $this->filterByModels($viaModels);
-        } elseif (is_array($this->via)) {
+        if (is_array($this->via)) {
             // via relation
             /* @var $viaQuery ActiveRelationTrait|ActiveQueryTrait */
             [$viaName, $viaQuery] = $this->via;
-            if ($viaQuery->asArray === null) {
-                // inherit asArray from primary query
-                $viaQuery->asArray($this->asArray);
-            }
             $viaQuery->primaryModel = null;
             $viaModels = $viaQuery->populateRelation($viaName, $primaryModels);
             $this->filterByModels($viaModels);
@@ -338,8 +187,7 @@ trait ActiveRelationTrait
             $relation = $model->getRelation($name);
         } else {
             /* @var $modelClass ActiveRecordInterface */
-            $modelClass = $this->modelClass;
-            $relation = $modelClass::instance()->getRelation($name);
+            $relation = create($this->modelClass, ['db' => $this->db])->getRelation($name);
         }
 
         if ($relation->multiple) {
@@ -466,8 +314,7 @@ trait ActiveRelationTrait
         if ($this instanceof ActiveQuery && (!empty($this->join) || !empty($this->joinWith))) {
             if (empty($this->from)) {
                 /* @var $modelClass ActiveRecord */
-                $modelClass = $this->modelClass;
-                $alias = $modelClass::tableName();
+                $alias = create($this->modelClass, ['db' => $this->db])->tableName();
             } else {
                 foreach ($this->from as $alias => $table) {
                     if (!is_string($alias)) {
@@ -578,26 +425,5 @@ trait ActiveRelationTrait
         }
 
         return (string)$value;
-    }
-
-    /**
-     * @param array $primaryModels either array of AR instances or arrays
-     * @return array
-     * @throws Throwable
-     */
-    private function findJunctionRows(array $primaryModels): array
-    {
-        if (empty($primaryModels)) {
-            return [];
-        }
-        $this->filterByModels($primaryModels);
-        /* @var $primaryModel ActiveRecord */
-        $primaryModel = reset($primaryModels);
-        if (!$primaryModel instanceof ActiveRecordInterface) {
-            // when primaryModels are array of arrays (asArray case)
-            $primaryModel = $this->modelClass;
-        }
-
-        return $this->asArray()->all($primaryModel::getDb());
     }
 }
