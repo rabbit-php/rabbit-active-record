@@ -479,21 +479,6 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
         return $values;
     }
 
-    public function populateRecord(BaseActiveRecord $record, array $row): void
-    {
-        $columns = array_flip($record->attributes());
-        foreach ($row as $name => $value) {
-            if (isset($columns[$name])) {
-                $record->_attributes[$name] = $value;
-            } elseif ($record->canSetProperty($name)) {
-                $record->$name = $value;
-            }
-        }
-        $record->_oldAttributes = $record->_attributes;
-        $record->_related = [];
-        $record->_relationsDependencies = [];
-    }
-
     /**
      * @return static
      */

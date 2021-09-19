@@ -180,17 +180,6 @@ class ActiveRecord extends BaseActiveRecord
         return [];
     }
 
-    public function populateRecord(BaseActiveRecord $record, array $row): void
-    {
-        $columns = $this->getTableSchema()->columns;
-        foreach ($row as $name => $value) {
-            if (isset($columns[$name])) {
-                $row[$name] = $columns[$name]->phpTypecast($value);
-            }
-        }
-        parent::populateRecord($record, $row);
-    }
-
     public function insert(bool $runValidation = true, array $attributes = null): bool
     {
         if ($runValidation && !$this->validate($attributes)) {
