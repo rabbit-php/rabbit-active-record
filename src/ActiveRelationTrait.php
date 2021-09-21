@@ -346,4 +346,17 @@ trait ActiveRelationTrait
         }
         $this->andWhere(['in', $attributes, array_unique($values, SORT_REGULAR)]);
     }
+
+    private function getModelKey(array $model, array $attributes): string
+    {
+        $key = [];
+        foreach ($attributes as $attribute) {
+            $key[] = (string)$model[$attribute];
+        }
+        if (count($key) > 1) {
+            return serialize($key);
+        }
+        $key = reset($key);
+        return is_scalar($key) ? $key : serialize($key);
+    }
 }
