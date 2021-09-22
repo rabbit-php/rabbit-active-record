@@ -21,7 +21,7 @@ class ARHelper
     const INSERT_DEFAULT = 'INSERT';
     const INSERT_IGNORE = 'INSERT IGNORE';
 
-    public static function typeInsert(BaseActiveRecord $model, array $arrayColumns, string $insertType = self::INSERT_DEFAULT): int
+    public static function typeInsert(BaseActiveRecord $model, array &$arrayColumns, string $insertType = self::INSERT_DEFAULT): int
     {
         if (empty($arrayColumns)) {
             return 0;
@@ -88,7 +88,7 @@ class ARHelper
         return $conn->createCommand($sql, $params)->execute();
     }
 
-    public static function saveSeveral(BaseActiveRecord $model, array $arrayColumns, bool $withUpdate = true): int
+    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true): int
     {
         if (empty($arrayColumns)) {
             return 0;
@@ -182,7 +182,7 @@ class ARHelper
         return $conn->createCommand($sql, $params)->execute();
     }
 
-    public static function updateSeveral(BaseActiveRecord $model, array $arrayColumns, array $when = null): int
+    public static function updateSeveral(BaseActiveRecord $model, array &$arrayColumns, array $when = null): int
     {
         if (empty($arrayColumns)) {
             return 0;
@@ -257,7 +257,7 @@ class ARHelper
         return $conn->createCommand($updateSql, $bindings)->execute();
     }
 
-    public static function deleteSeveral(BaseActiveRecord $model, array $arrayColumns): int
+    public static function deleteSeveral(BaseActiveRecord $model, array &$arrayColumns): int
     {
         if (empty($arrayColumns)) {
             return 0;
@@ -293,7 +293,7 @@ class ARHelper
         return (int)$result;
     }
 
-    public static function create(BaseActiveRecord $model, array $body, bool $batch = true): array
+    public static function create(BaseActiveRecord $model, array &$body, bool $batch = true): array
     {
         if (!ArrayHelper::isIndexed($body)) {
             $body = [$body];
@@ -310,7 +310,7 @@ class ARHelper
         return is_array($result) ? $result : [$result];
     }
 
-    public static function update(BaseActiveRecord $model, array $body, bool $onlyUpdate = false, array $when = null, bool $batch = true): array
+    public static function update(BaseActiveRecord $model, array &$body, bool $onlyUpdate = false, array $when = null, bool $batch = true): array
     {
         if (($body['edit'] ?? false) && $body['edit']) {
             $result = $model->updateAll($body['edit'], DBHelper::Search((new Query()),  ArrayHelper::getValue($body, 'where', []))->where);
@@ -337,7 +337,7 @@ class ARHelper
         return is_array($result) ? $result : [$result];
     }
 
-    public static function delete(BaseActiveRecord $model, array $body): int
+    public static function delete(BaseActiveRecord $model, array &$body): int
     {
         if (ArrayHelper::isIndexed($body)) {
             return self::deleteSeveral($model, $body);
