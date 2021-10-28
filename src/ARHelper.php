@@ -106,6 +106,34 @@ class ARHelper
         $tableSchema = $schema->getTableSchema($model->tableName());
         $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
 
+        //关联模型
+        foreach ($model->getRelations() as $child => [$key, $val, $delete]) {
+            $child_model = new $child();
+            $childs = [];
+            foreach ($arrayColumns as $item) {
+                if ($item[$key] ?? false) {
+                    if (!ArrayHelper::isIndexed($item[$key])) {
+                        $item[$key] = [$item[$key]];
+                    }
+                    foreach ($val as $c_attr => $p_attr) {
+                        foreach ($item[$key] as &$param) {
+                            $param[$c_attr] = $item[$p_attr];
+                        }
+                    }
+                    $chd = ArrayHelper::remove($item, $key);
+                    $childs = [...$childs, ...$chd];
+                    if ($delete) {
+                        if (is_array($delete)) {
+                            self::delete($child_model, $delete);
+                        } elseif (is_callable($delete)) {
+                            call_user_func($delete, $child_model, $chd);
+                        }
+                    }
+                }
+            }
+            $childs && self::saveSeveral($child_model, $childs);
+        }
+
         foreach ($arrayColumns as $item) {
             $table = clone $model;
             $table->load($item, '');
@@ -114,30 +142,6 @@ class ARHelper
             }
             $tableArray = $table->toArray();
             $item = array_merge($item, $tableArray);
-            //关联模型
-            foreach ($table->getRelations() as $child => [$key, $val, $delete]) {
-                if ($item[$key] ?? false) {
-                    $child_model = new $child();
-                    if (!ArrayHelper::isIndexed($item[$key])) {
-                        $item[$key] = [$item[$key]];
-                    }
-                    foreach ($val as $c_attr => $p_attr) {
-                        foreach ($item[$key] as &$param) {
-                            $param[$c_attr] = $table->{$p_attr};
-                        }
-                    }
-                    if ($delete) {
-                        if (is_array($delete)) {
-                            self::delete($child_model, $delete);
-                        } elseif (is_callable($delete)) {
-                            call_user_func($delete, $child_model, $item[$key]);
-                        }
-                    }
-                    if (self::saveSeveral($child_model, $item[$key]) === false) {
-                        return 0;
-                    }
-                }
-            }
             $names = array();
             $placeholders = array();
             $table->isNewRecord = false;
@@ -295,80 +299,86 @@ class ARHelper
 
     public static function create(BaseActiveRecord $model, array &$body, bool $batch = true): array
     {
-        if (!ArrayHelper::isIndexed($body)) {
-            $body = [$body];
-        }
-        if (!$batch) {
-            $result = [];
-            foreach ($body as $params) {
-                $res = self::createModel(clone $model, $params);
-                $result[] = $res;
+        return $model->getDb()->transaction(function () use ($model, &$body, $batch) {
+            if (!ArrayHelper::isIndexed($body)) {
+                $body = [$body];
             }
-        } else {
-            $result = self::saveSeveral($model, $body, false);
-        }
-        return is_array($result) ? $result : [$result];
+            if (!$batch) {
+                $result = [];
+                foreach ($body as $params) {
+                    $res = self::createModel(clone $model, $params);
+                    $result[] = $res;
+                }
+            } else {
+                $result = self::saveSeveral($model, $body, false);
+            }
+            return is_array($result) ? $result : [$result];
+        });
     }
 
     public static function update(BaseActiveRecord $model, array &$body, bool $onlyUpdate = false, array $when = null, bool $batch = true): array
     {
-        if (($body['edit'] ?? false) && $body['edit']) {
-            $result = $model->updateAll($body['edit'], DBHelper::Search((new Query()),  ArrayHelper::getValue($body, 'where', []))->where);
-            if ($result === false) {
-                throw new Exception('Failed to update the object for unknown reason.');
-            }
-        } else {
-            if (!ArrayHelper::isIndexed($body)) {
-                $body = [$body];
-            }
-            if ($onlyUpdate) {
-                $result = self::updateSeveral($model, $body, $when);
-            } elseif (!$batch) {
-                $result = [];
-                $exists = self::findExists($model, $body);
-                foreach ($body as $params) {
-                    $res = self::updateModel(clone $model, $params, self::checkExist($params, $exists, $model->primaryKey()));
-                    $result[] = $res;
+        return $model->getDb()->transaction(function () use ($model, &$body, $onlyUpdate, $when, $batch) {
+            if (($body['edit'] ?? false) && $body['edit']) {
+                $result = $model->updateAll($body['edit'], DBHelper::Search((new Query()),  ArrayHelper::getValue($body, 'where', []))->where);
+                if ($result === false) {
+                    throw new Exception('Failed to update the object for unknown reason.');
                 }
             } else {
-                $result = self::saveSeveral($model, $body);
+                if (!ArrayHelper::isIndexed($body)) {
+                    $body = [$body];
+                }
+                if ($onlyUpdate) {
+                    $result = self::updateSeveral($model, $body, $when);
+                } elseif (!$batch) {
+                    $result = [];
+                    $exists = self::findExists($model, $body);
+                    foreach ($body as $params) {
+                        $res = self::updateModel(clone $model, $params, self::checkExist($params, $exists, $model->primaryKey()));
+                        $result[] = $res;
+                    }
+                } else {
+                    $result = self::saveSeveral($model, $body);
+                }
             }
-        }
-        return is_array($result) ? $result : [$result];
+            return is_array($result) ? $result : [$result];
+        });
     }
 
     public static function delete(BaseActiveRecord $model, array &$body): int
     {
-        if (ArrayHelper::isIndexed($body)) {
-            return self::deleteSeveral($model, $body);
-        }
-        $keys = array_keys($body);
-        if (array_intersect($keys, $model->primaryKey())) {
-            $conditions = [];
-            foreach ($model->primaryKey() as $key) {
-                if ($body[$key] ?? false) {
-                    $conditions[$key] = $body[$key];
-                }
+        return $model->getDb()->transaction(function () use ($model, &$body) {
+            if (ArrayHelper::isIndexed($body)) {
+                return self::deleteSeveral($model, $body);
             }
-            if (empty($conditions)) {
-                return 0;
-            }
-            foreach ($model->getRelations() as $child => [$key]) {
-                if ($body[$key] ?? false) {
-                    $child_model = new $child();
-                    if ($child_model->deleteAll($body[$key]) === 0) {
-                        return 0;
+            $keys = array_keys($body);
+            if (array_intersect($keys, $model->primaryKey())) {
+                $conditions = [];
+                foreach ($model->primaryKey() as $key) {
+                    if ($body[$key] ?? false) {
+                        $conditions[$key] = $body[$key];
                     }
                 }
+                if (empty($conditions)) {
+                    return 0;
+                }
+                foreach ($model->getRelations() as $child => [$key]) {
+                    if ($body[$key] ?? false) {
+                        $child_model = new $child();
+                        if ($child_model->deleteAll($body[$key]) === 0) {
+                            return 0;
+                        }
+                    }
+                }
+                return $model->deleteAll($conditions);
             }
-            return $model->deleteAll($conditions);
-        }
-        foreach ($keys as $key) {
-            if (str_contains(strtolower($key), 'where')) {
-                return $model->deleteAll(DBHelper::Search((new Query()), $body)->where);
+            foreach ($keys as $key) {
+                if (str_contains(strtolower($key), 'where')) {
+                    return $model->deleteAll(DBHelper::Search((new Query()), $body)->where);
+                }
             }
-        }
-        return 0;
+            return 0;
+        });
     }
 
     private static function createModel(BaseActiveRecord $model, array $body): array
