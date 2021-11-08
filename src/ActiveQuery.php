@@ -362,6 +362,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     {
         $via = $child->via;
         $child->via = null;
+        $child->cache($parent->queryCacheDuration, $parent->cache);
         if ($via instanceof self) {
             // via table
             $this->joinWithRelation($parent, $via, $joinType);

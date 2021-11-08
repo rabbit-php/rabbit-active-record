@@ -200,7 +200,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     {
         /* @var $class ActiveRecordInterface */
         /* @var $query ActiveQuery */
-        $query = (new $class())->find();
+        $query = create($class)->find();
         $query->primaryModel = $this;
         $query->link = $link;
         $query->multiple = $multiple;
