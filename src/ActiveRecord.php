@@ -19,6 +19,7 @@ use Rabbit\DB\StaleObjectException;
 use Rabbit\Base\Helper\StringHelper;
 use Rabbit\Base\Exception\InvalidConfigException;
 use Rabbit\Base\Exception\InvalidArgumentException;
+use Rabbit\DB\Query;
 
 class ActiveRecord extends BaseActiveRecord
 {
@@ -178,6 +179,13 @@ class ActiveRecord extends BaseActiveRecord
     public function transactions(): array
     {
         return [];
+    }
+
+    public function insertByQuery(Query $query): bool
+    {
+        return $this->db->transaction(function () use ($query): bool {
+            return (bool)$this->db->createCommand()->insert($this->tableName(), $query);
+        });
     }
 
     public function insert(bool $runValidation = true, array $attributes = null): bool
