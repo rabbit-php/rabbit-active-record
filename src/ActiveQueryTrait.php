@@ -77,6 +77,8 @@ trait ActiveQueryTrait
                 $relation = $relations[$name];
             }
 
+            $relation->cache($this->queryCacheDuration, $this->cache);
+
             if (isset($childName)) {
                 $relation->with[$childName] = $callback;
             } elseif ($callback !== null) {
