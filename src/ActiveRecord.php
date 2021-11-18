@@ -183,9 +183,7 @@ class ActiveRecord extends BaseActiveRecord
 
     public function insertByQuery(Query $query, bool $withUpdate = false): bool
     {
-        return $this->db->transaction(function () use ($query, $withUpdate): bool {
-            return (bool)$this->db->createCommand()->insert($this->tableName(), $query, $withUpdate)->execute();
-        });
+        return (bool)$this->db->createCommand()->insert($this->tableName(), $query, $withUpdate)->execute();
     }
 
     public function insert(bool $runValidation = true, array $attributes = null): bool
