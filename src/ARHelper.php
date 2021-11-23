@@ -134,6 +134,7 @@ class ARHelper
             $childs && self::saveSeveral($child_model, $childs);
         }
 
+        $updates = [];
         foreach ($arrayColumns as $item) {
             $table = clone $model;
             $table->load($item, '');
