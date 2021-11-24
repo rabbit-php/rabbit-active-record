@@ -117,7 +117,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         $hash = [];
         /* @var $class ActiveRecord */
         $class = $this->modelClass;
-        $pks = (new $class($this->db))->primaryKey();
+        $pks = create($class)->primaryKey();
 
         if (count($pks) > 1) {
             // composite primary key
