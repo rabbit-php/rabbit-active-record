@@ -115,9 +115,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     protected function removeDuplicatedModels(array $models): array
     {
         $hash = [];
-        /* @var $class ActiveRecord */
-        $class = $this->modelClass;
-        $pks = create($class)->primaryKey();
+        $pks = create($this->modelClass)->primaryKey();
 
         if (count($pks) > 1) {
             // composite primary key
@@ -138,7 +136,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
                 }
             }
         } elseif (empty($pks)) {
-            throw new InvalidConfigException("Primary key of '{$class}' can not be empty.");
+            throw new InvalidConfigException("Primary key of '{$this->modelClass}' can not be empty.");
         } else {
             // single column primary key
             $pk = reset($pks);
@@ -241,7 +239,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
 
         /* @var $modelClass ActiveRecordInterface */
         $modelClass = $this->modelClass;
-        $model = new $modelClass($this->db);
+        $model = new $modelClass();
         foreach ($this->joinWith as [$with, $eagerLoading, $joinType]) {
             $this->joinWithRelations($model, $with, $joinType);
 
@@ -502,6 +500,6 @@ class ActiveQuery extends Query implements ActiveQueryInterface
 
     protected function getPrimaryTableName(): string
     {
-        return create($this->modelClass, ['db' => $this->db])->tableName();
+        return create($this->modelClass)->tableName();
     }
 }
