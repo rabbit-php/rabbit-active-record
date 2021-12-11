@@ -44,7 +44,6 @@ class ARHelper
             $table->load($item, '');
             $names = array();
             $placeholders = array();
-            $table->isNewRecord = false;
             if (!$table->validate()) {
                 throw new UserException(implode(PHP_EOL, $table->getFirstErrors()));
             }
@@ -142,10 +141,8 @@ class ARHelper
                 throw new UserException(implode(PHP_EOL, $table->getFirstErrors()));
             }
             $tableArray = $table->toArray();
-            $item = array_merge($item, $tableArray);
             $names = array();
             $placeholders = array();
-            $table->isNewRecord = false;
             if ($keys) {
                 foreach ($keys as $key) {
                     if (($item[$key] ?? false) && $tableArray[$key] === null) {
