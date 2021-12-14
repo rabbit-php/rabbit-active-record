@@ -50,18 +50,20 @@ class ARHelper
             $tableArray = $table->toArray();
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (($item[$key] ?? false) && $tableArray[$key] === null) {
-                        $tableArray[$key] = $item[$key];
+                    if (!($item[$key] ?? false) && ($tableArray[$key] ?? false)) {
+                        $item[$key] = $tableArray[$key];
                     }
                 }
             }
-            ksort($tableArray);
-            foreach ($tableArray as $name => $value) {
-                $value = $item[$name];
+            ksort($item);
+            foreach ($item as $name => $value) {
+                if (!($columnSchemas[$name] ?? false)) {
+                    continue;
+                }
                 if (!$i) {
                     $names[] = $conn->quoteColumnName($name);
                 }
-                $value = ($columnSchemas[$name] ?? false) ? $columnSchemas[$name]->dbTypecast($value) : $value;
+                $value =  $columnSchemas[$name]->dbTypecast($value);
                 if ($value instanceof Expression) {
                     $placeholders[] = $value->expression;
                     foreach ($value->params as $n => $v) {
@@ -105,34 +107,7 @@ class ARHelper
         $tableSchema = $schema->getTableSchema($model->tableName());
         $columnSchemas = $tableSchema !== null ? $tableSchema->columns : [];
 
-        //关联模型
-        foreach ($model->getRelations() as $child => [$key, $val, $delete]) {
-            $child_model = new $child();
-            $childs = [];
-            foreach ($arrayColumns as $item) {
-                if ($item[$key] ?? false) {
-                    if (!ArrayHelper::isIndexed($item[$key])) {
-                        $item[$key] = [$item[$key]];
-                    }
-                    foreach ($val as $c_attr => $p_attr) {
-                        foreach ($item[$key] as &$param) {
-                            $param[$c_attr] = $item[$p_attr];
-                        }
-                    }
-                    $chd = ArrayHelper::remove($item, $key);
-                    $childs = [...$childs, ...$chd];
-                    if ($delete) {
-                        if (is_array($delete)) {
-                            self::delete($child_model, $delete);
-                        } elseif (is_callable($delete)) {
-                            call_user_func($delete, $child_model, $chd);
-                        }
-                    }
-                }
-            }
-            $childs && self::saveSeveral($child_model, $childs);
-        }
-
+        $childs = [];
         $updates = [];
         foreach ($arrayColumns as $item) {
             $table = clone $model;
@@ -145,19 +120,44 @@ class ARHelper
             $placeholders = array();
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (($item[$key] ?? false) && $tableArray[$key] === null) {
-                        $tableArray[$key] = $item[$key];
+                    if (!($item[$key] ?? false) && ($tableArray[$key] ?? false)) {
+                        $item[$key] = $tableArray[$key];
                     }
                 }
             }
-            ksort($tableArray);
-            foreach ($tableArray as $name => $value) {
-                $value = $item[$name];
+            ksort($item);
+            //关联模型
+            foreach ($model->getRelations() as $child => [$key, $val, $delete]) {
+                if ($item[$key] ?? false) {
+                    if (!ArrayHelper::isIndexed($item[$key])) {
+                        $item[$key] = [$item[$key]];
+                    }
+                    foreach ($val as $c_attr => $p_attr) {
+                        foreach ($item[$key] as &$param) {
+                            $param[$c_attr] = $item[$p_attr];
+                        }
+                    }
+                    $chd = ArrayHelper::remove($item, $key);
+                    $childs[$child] = [...$childs[$child] ?? [], ...$chd];
+                    if ($delete) {
+                        $child_model = new $child();
+                        if (is_array($delete)) {
+                            self::delete($child_model, $delete);
+                        } elseif (is_callable($delete)) {
+                            call_user_func($delete, $child_model, $chd);
+                        }
+                    }
+                }
+            }
+            foreach ($item as $name => $value) {
+                if (!($columnSchemas[$name] ?? false)) {
+                    continue;
+                }
                 if (!$i) {
                     $names[] = $conn->quoteColumnName($name);
                     $withUpdate && !in_array($name, $keys ?? []) && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
                 }
-                $value = ($columnSchemas[$name] ?? false) ? $columnSchemas[$name]->dbTypecast($value) : $value;
+                $value = $columnSchemas[$name]->dbTypecast($value);
                 if ($value instanceof Expression) {
                     $placeholders[] = $value->expression;
                     foreach ($value->params as $n => $v) {
@@ -181,6 +181,12 @@ class ARHelper
             $i++;
         }
         $withUpdate && $updates && $sql .= " on duplicate key update " . implode(', ', $updates);
+        if ($childs) {
+            foreach ($childs as $child => $items) {
+                $child_model = new $child();
+                self::saveSeveral($child_model, $items);
+            }
+        }
         return $conn->createCommand($sql, $params)->execute();
     }
 
