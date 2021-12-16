@@ -89,7 +89,7 @@ class ARHelper
         return $conn->createCommand($sql, $params)->execute();
     }
 
-    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true): int
+    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true, array $exclude = []): int
     {
         if (empty($arrayColumns)) {
             return 0;
@@ -137,7 +137,7 @@ class ARHelper
                             $param[$c_attr] = $item[$p_attr];
                         }
                     }
-                    $chd = ArrayHelper::remove($item, $key);
+                    $chd = ArrayHelper::getValue($item, $key);
                     $childs[$child] = [...$childs[$child] ?? [], ...$chd];
                     if ($delete) {
                         $child_model = new $child();
@@ -155,7 +155,7 @@ class ARHelper
                 }
                 if (!$i) {
                     $names[] = $conn->quoteColumnName($name);
-                    $withUpdate && !in_array($name, $keys ?? []) && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
+                    $withUpdate && !in_array($name, $keys ?? []) && !in_array($name, $exclude) && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
                 }
                 $value = $columnSchemas[$name]->dbTypecast($value);
                 if ($value instanceof Expression) {
@@ -342,7 +342,7 @@ class ARHelper
                         $result[] = $res;
                     }
                 } else {
-                    $result = self::saveSeveral($model, $body);
+                    $result = self::saveSeveral($model, $body, exclude: $when);
                 }
             }
             return is_array($result) ? $result : [$result];
