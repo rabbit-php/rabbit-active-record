@@ -342,7 +342,7 @@ class ARHelper
                         $result[] = $res;
                     }
                 } else {
-                    $result = self::saveSeveral($model, $body, exclude: $when);
+                    $result = self::saveSeveral($model, $body, exclude: $when ?? []);
                 }
             }
             return is_array($result) ? $result : [$result];
