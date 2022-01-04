@@ -21,7 +21,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
 
     public ?string $sql = null;
 
-    public string|array $on;
+    public null|string|array $on = null;
 
     public function __construct(string $modelClass, ?\Rabbit\Pool\ConnectionInterface $db = null, array $config = [])
     {
