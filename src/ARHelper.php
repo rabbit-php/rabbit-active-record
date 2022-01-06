@@ -235,7 +235,7 @@ class ARHelper
                     $refSql = rtrim($refSql, 'and');
                     $value = ($columnSchemas[$uColumn] ?? false) ? $columnSchemas[$uColumn]->dbTypecast($data[$uColumn]) : $data[$uColumn];
                     if ($value instanceof JsonExpression) {
-                        $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value);
+                        $bindings[] = is_string($value->getValue()) ? $value->getValue() : JsonHelper::encode($value->getValue());
                     } elseif ($value instanceof Expression) {
                         $setSql .= "WHEN $refSql THEN {$value->expression} ";
                         continue;
