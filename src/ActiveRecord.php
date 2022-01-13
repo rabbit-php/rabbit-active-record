@@ -14,7 +14,6 @@ use Rabbit\Base\App;
 use Rabbit\DB\Expression;
 use Rabbit\DB\TableSchema;
 use Rabbit\Base\Helper\Inflector;
-use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\StaleObjectException;
 use Rabbit\Base\Helper\StringHelper;
 use Rabbit\Base\Exception\InvalidConfigException;

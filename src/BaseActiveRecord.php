@@ -14,7 +14,6 @@ use Rabbit\Base\Exception\InvalidCallException;
 use Rabbit\Base\Exception\InvalidConfigException;
 use Rabbit\Base\Exception\NotSupportedException;
 use Rabbit\Base\Exception\UnknownMethodException;
-use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\Exception;
 use Rabbit\DB\StaleObjectException;
 use Rabbit\Pool\ConnectionInterface;
