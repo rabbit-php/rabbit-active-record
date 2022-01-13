@@ -51,11 +51,6 @@ class ActiveRecord extends BaseActiveRecord
         return [];
     }
 
-    public function getScenes(): array
-    {
-        return [];
-    }
-
     public function loadDefaultValues(bool $skipIfSet = true): self
     {
         foreach ($this->getTableSchema()->columns as $column) {

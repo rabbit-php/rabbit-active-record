@@ -50,7 +50,7 @@ class ARHelper
             $tableArray = $table->toArray();
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (!($item[$key] ?? false) && ($tableArray[$key] ?? false)) {
+                    if ($tableArray[$key] ?? false) {
                         $item[$key] = $tableArray[$key];
                     }
                 }
@@ -120,7 +120,7 @@ class ARHelper
             $placeholders = array();
             if ($keys) {
                 foreach ($keys as $key) {
-                    if (!($item[$key] ?? false) && ($tableArray[$key] ?? false)) {
+                    if ($tableArray[$key] ?? false) {
                         $item[$key] = $tableArray[$key];
                     }
                 }
@@ -324,7 +324,8 @@ class ARHelper
     {
         return $model->getDb()->transaction(function () use ($model, &$body, $onlyUpdate, $when, $batch) {
             if (($body['edit'] ?? false) && $body['edit']) {
-                $result = $model->updateAll($body['edit'], DBHelper::Search((new Query()),  ArrayHelper::getValue($body, 'where', []))->where);
+                [$edit, $where] = $body['edit'];
+                $result = $model->updateAll($edit, DBHelper::Search((new Query()), $where)->where);
                 if ($result === false) {
                     throw new Exception('Failed to update the object for unknown reason.');
                 }
