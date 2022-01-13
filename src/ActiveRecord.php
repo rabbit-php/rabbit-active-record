@@ -73,7 +73,7 @@ class ActiveRecord extends BaseActiveRecord
     {
         $query = $this->find();
 
-        if (!ArrayHelper::isAssociative($condition)) {
+        if (!array_is_list($condition)) {
             // query by primary key
             $primaryKey = $this->primaryKey();
             if (isset($primaryKey[0])) {

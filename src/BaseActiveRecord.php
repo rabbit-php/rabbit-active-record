@@ -58,7 +58,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     {
         $query = $this->find();
 
-        if (!ArrayHelper::isAssociative($condition)) {
+        if (array_is_list($condition)) {
             // query by primary key
             $primaryKey = $this->primaryKey();
             if (isset($primaryKey[0])) {
