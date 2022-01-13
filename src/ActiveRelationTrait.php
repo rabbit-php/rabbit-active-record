@@ -133,12 +133,11 @@ trait ActiveRelationTrait
                     $key = (string)$key;
                     if (isset($buckets[$key])) {
                         if ($this->indexBy !== null) {
-                            // if indexBy is set, array_merge will cause renumbering of numeric array
                             foreach ($buckets[$key] as $bucketKey => $bucketValue) {
                                 $value[$bucketKey] = $bucketValue;
                             }
                         } else {
-                            $value = array_merge($value, $buckets[$key]);
+                            $value = [...$value, ...$buckets[$key]];
                         }
                     }
                 }
@@ -306,7 +305,7 @@ trait ActiveRelationTrait
             foreach ($models as $model) {
                 if (($value = $model[$attribute]) !== null) {
                     if (is_array($value)) {
-                        $values = array_merge($values, $value);
+                        $values = [...$values, ...$value];
                     } elseif ($call ?? false && is_callable($call)) {
                         $values = $call($value);
                     } else {

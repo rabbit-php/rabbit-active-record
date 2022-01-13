@@ -107,7 +107,7 @@ class Model extends ModelModel implements IteratorAggregate, ArrayAccess, Arraya
         $lines = [];
         $errors = $showAllErrors ? $this->getErrors() : $this->getFirstErrors();
         foreach ($errors as $es) {
-            $lines = array_merge((array)$es, $lines);
+            $lines = [...(array)$es, ...$lines];
         }
         return $lines;
     }
