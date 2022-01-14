@@ -18,6 +18,7 @@ use Rabbit\DB\StaleObjectException;
 use Rabbit\Base\Helper\StringHelper;
 use Rabbit\Base\Exception\InvalidConfigException;
 use Rabbit\Base\Exception\InvalidArgumentException;
+use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\Query;
 
 class ActiveRecord extends BaseActiveRecord
@@ -72,7 +73,11 @@ class ActiveRecord extends BaseActiveRecord
     {
         $query = $this->find();
 
-        if (!array_is_list($condition)) {
+        if (!is_array($condition)) {
+            $condition = [$condition];
+        }
+
+        if (ArrayHelper::isIndexed($condition)) {
             // query by primary key
             $primaryKey = $this->primaryKey();
             if (isset($primaryKey[0])) {

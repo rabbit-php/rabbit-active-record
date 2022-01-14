@@ -273,7 +273,7 @@ class ARHelper
         $result = false;
         $keys = $model->primaryKey();
         $condition = [];
-        if (!array_is_list($arrayColumns)) {
+        if (!ArrayHelper::isIndexed($arrayColumns)) {
             $arrayColumns = [$arrayColumns];
         }
         foreach ($arrayColumns as $item) {
@@ -405,7 +405,7 @@ class ARHelper
         //关联模型
         foreach ($model->getRelations() as $child => [$key, $val]) {
             if ($body[$key] ?? false) {
-                if (!array_is_list($body[$key])) {
+                if (!ArrayHelper::isIndexed($body[$key])) {
                     $body[$key] = [$body[$key]];
                 }
                 foreach ($body[$key] as $params) {
@@ -430,7 +430,7 @@ class ARHelper
     protected static function findExists(BaseActiveRecord $model, array $body, array $condition = []): array
     {
         $keys = $model->primaryKey();
-        if (!array_is_list($body)) {
+        if (!ArrayHelper::isIndexed($body)) {
             $body = [$body];
         }
         foreach ($keys as $key) {
@@ -468,7 +468,7 @@ class ARHelper
                 if (($body['edit'] ?? false) && $body['edit']) {
                     $result[$key] = self::update($child_model, $body);
                 } else {
-                    if (!array_is_list($body[$key])) {
+                    if (!ArrayHelper::isIndexed($body[$key])) {
                         $params = [$body[$key]];
                     } else {
                         $params = $body[$key];

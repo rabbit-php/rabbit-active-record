@@ -14,6 +14,7 @@ use Rabbit\Base\Exception\InvalidCallException;
 use Rabbit\Base\Exception\InvalidConfigException;
 use Rabbit\Base\Exception\NotSupportedException;
 use Rabbit\Base\Exception\UnknownMethodException;
+use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\DB\Exception;
 use Rabbit\DB\StaleObjectException;
 use Rabbit\Pool\ConnectionInterface;
@@ -57,7 +58,11 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     {
         $query = $this->find();
 
-        if (array_is_list($condition)) {
+        if (!is_array($condition)) {
+            $condition = [$condition];
+        }
+
+        if (ArrayHelper::isIndexed($condition)) {
             // query by primary key
             $primaryKey = $this->primaryKey();
             if (isset($primaryKey[0])) {
