@@ -11,7 +11,7 @@ namespace Rabbit\ActiveRecord;
 
 trait ActiveQueryTrait
 {
-    public ?string $modelClass = null;
+    public readonly string $modelClass;
 
     public ?array $with = null;
 

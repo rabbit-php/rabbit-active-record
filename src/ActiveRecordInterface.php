@@ -67,6 +67,4 @@ interface ActiveRecordInterface
     public function unlink(string $name, ActiveRecordInterface $model, bool $delete = false): void;
 
     public function getDb(): ConnectionInterface;
-
-    public function setDb(ConnectionInterface $conn): self;
 }

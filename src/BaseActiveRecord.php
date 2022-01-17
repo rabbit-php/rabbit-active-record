@@ -31,14 +31,14 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
 
     protected bool $autoAlias = true;
 
-    protected ?ConnectionInterface $db = null;
+    protected readonly ConnectionInterface $db;
 
     public function __construct(string|ConnectionInterface $db = null)
     {
         if (is_string($db)) {
             $this->db = getDI('db')->get($db);
         } elseif ($db === null) {
-            $this->getDb();
+           $this->db = getDI('db')->get();
         } else {
             $this->db = $db;
         }
@@ -911,13 +911,6 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
 
     public function getDb(): ConnectionInterface
     {
-        $this->db = $this->db ?? getDI('db')->get();
         return $this->db;
-    }
-
-    public function setDb(ConnectionInterface $db): self
-    {
-        $this->db = $db;
-        return $this;
     }
 }
