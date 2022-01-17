@@ -31,7 +31,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
 
     protected bool $autoAlias = true;
 
-    protected readonly ConnectionInterface $db;
+    protected ConnectionInterface $db;
 
     public function __construct(string|ConnectionInterface $db = null)
     {
