@@ -491,7 +491,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
         return new static();
     }
 
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return $this->__isset($offset);
     }
@@ -878,7 +878,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
         return array_combine($fields, $fields);
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
         if (property_exists($this, $offset)) {
             $this->$offset = null;

@@ -225,22 +225,22 @@ class Model extends ModelModel implements IteratorAggregate, ArrayAccess, Arraya
         return new ArrayIterator($attributes);
     }
 
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return isset($this->$offset);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->$offset;
     }
 
-    public function offsetSet($offset, $item)
+    public function offsetSet(mixed $offset, mixed $item): void
     {
         $this->$offset = $item;
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
         $this->$offset = null;
     }
