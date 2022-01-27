@@ -303,7 +303,7 @@ class ARHelper
 
     public static function create(BaseActiveRecord $model, array &$body, bool $batch = true): array
     {
-        return $model->getDb()->transaction(function () use ($model, &$body, $batch) {
+        return $model->getDb()->transaction(function () use ($model, &$body, $batch): array {
             if (!ArrayHelper::isIndexed($body)) {
                 $body = [$body];
             }
@@ -322,7 +322,7 @@ class ARHelper
 
     public static function update(BaseActiveRecord $model, array &$body, bool $onlyUpdate = false, array $when = null, bool $batch = true): array
     {
-        return $model->getDb()->transaction(function () use ($model, &$body, $onlyUpdate, $when, $batch) {
+        return $model->getDb()->transaction(function () use ($model, &$body, $onlyUpdate, $when, $batch): array {
             if (($body['edit'] ?? false) && $body['edit']) {
                 [$edit, $where] = $body['edit'];
                 $result = $model->updateAll($edit, DBHelper::Search((new Query()), $where)->where);
@@ -352,7 +352,7 @@ class ARHelper
 
     public static function delete(BaseActiveRecord $model, array &$body): int
     {
-        return $model->getDb()->transaction(function () use ($model, &$body) {
+        return $model->getDb()->transaction(function () use ($model, &$body): int {
             if (ArrayHelper::isIndexed($body)) {
                 return self::deleteSeveral($model, $body);
             }

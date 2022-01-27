@@ -103,7 +103,7 @@ class ActiveRecord extends BaseActiveRecord
         // valid column names are table column names or column names prefixed with table name
         $columnNames = $this->getTableSchema()->getColumnNames();
         $tableName = $this->tableName();
-        $columnNames = [...$columnNames, ...array_map(fn ($columnName) => "$tableName.$columnName", $columnNames)];
+        $columnNames = [...$columnNames, ...array_map(fn (string $columnName): string => "$tableName.$columnName", $columnNames)];
         foreach ($condition as $key => $value) {
             if (is_string($key) && !in_array($key, $columnNames, true)) {
                 throw new InvalidArgumentException('Key "' . $key . '" is not a column name and can not be used as a filter');

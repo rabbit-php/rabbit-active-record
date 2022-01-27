@@ -37,7 +37,7 @@ trait ArrayableTrait
                     $attribute = $attribute->toArray($nestedFields, $nestedExpand);
                 } elseif (is_array($attribute)) {
                     $attribute = array_map(
-                        function ($item) use ($nestedFields, $nestedExpand) {
+                        function (mixed $item) use ($nestedFields, $nestedExpand): mixed {
                             if ($item instanceof Arrayable) {
                                 return $item->toArray($nestedFields, $nestedExpand);
                             }

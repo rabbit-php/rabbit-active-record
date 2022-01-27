@@ -13,6 +13,7 @@ use Rabbit\DB\Query;
 use Rabbit\DB\Command;
 use Rabbit\DB\QueryBuilder;
 use Rabbit\Base\Exception\InvalidConfigException;
+use Rabbit\DB\QueryInterface;
 
 class ActiveQuery extends Query implements ActiveQueryInterface
 {
@@ -213,7 +214,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
                 // relation is defined with an alias, adjust callback to apply alias
                 [, $relation, $alias] = $matches;
                 $name = $relation;
-                $callback = function ($query) use ($callback, $alias) {
+                $callback = function (QueryInterface $query) use ($callback, $alias): void {
                     /* @var $query ActiveQuery */
                     $query->alias($alias);
                     if ($callback !== null) {
