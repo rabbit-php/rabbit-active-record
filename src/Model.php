@@ -149,7 +149,7 @@ class Model extends ModelModel implements IteratorAggregate, ArrayAccess, Arraya
 
     public function onUnsafeAttribute(string $name, $value): void
     {
-        if (getDI('debug')) {
+        if (config('debug')) {
             App::debug("Failed to set unsafe attribute '$name' in '" . get_class($this) . "'.");
         }
     }

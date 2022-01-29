@@ -36,7 +36,7 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
     public function __construct(string|ConnectionInterface $db = null)
     {
         if (is_string($db)) {
-            $this->db = getDI('db')->get($db);
+            $this->db = service('db')->get($db);
         } elseif ($db === null) {
             $this->db = $this->getDb();
         } else {
@@ -911,6 +911,6 @@ abstract class BaseActiveRecord extends Model implements ActiveRecordInterface
 
     public function getDb(): ConnectionInterface
     {
-        return $this->db ??= getDI('db')->get();
+        return $this->db ??= service('db')->get();
     }
 }
