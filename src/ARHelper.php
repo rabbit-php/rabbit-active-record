@@ -326,6 +326,7 @@ class ARHelper
             } else {
                 $result = $ret->current();
             }
+            $ret->next();
         }
         return is_array($result) ? $result : [$result];
     }
@@ -364,6 +365,7 @@ class ARHelper
                 } else {
                     $result = $ret->current();
                 }
+                $ret->next();
             }
         }
         return is_array($result) ? $result : [$result];
