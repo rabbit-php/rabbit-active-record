@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rabbit\ActiveRecord;
 
+use Generator;
 use Rabbit\DB\Query;
 use Rabbit\DB\DBHelper;
 use Rabbit\DB\Exception;
@@ -89,7 +90,7 @@ class ARHelper
         return $conn->createCommand($sql, $params)->execute();
     }
 
-    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true, array $exclude = []): int
+    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true, array $exclude = []): Generator
     {
         if (empty($arrayColumns)) {
             return 0;
@@ -182,12 +183,13 @@ class ARHelper
         }
         $withUpdate && $updates && $sql .= " on duplicate key update " . implode(', ', $updates);
         if ($childs) {
+            yield;
             foreach ($childs as $child => $items) {
                 $child_model = new $child();
                 self::saveSeveral($child_model, $items);
             }
         }
-        return $conn->createCommand($sql, $params)->execute();
+        yield $conn->createCommand($sql, $params)->execute();
     }
 
     public static function updateSeveral(BaseActiveRecord $model, array &$arrayColumns, array $when = null): int
@@ -303,51 +305,68 @@ class ARHelper
 
     public static function create(BaseActiveRecord $model, array &$body, bool $batch = true): array
     {
-        return $model->getDb()->transaction(function () use ($model, &$body, $batch): array {
-            if (!ArrayHelper::isIndexed($body)) {
-                $body = [$body];
-            }
-            if (!$batch) {
-                $result = [];
+        if (!ArrayHelper::isIndexed($body)) {
+            $body = [$body];
+        }
+        if (!$batch) {
+            $result = [];
+            $result = $model->getDb()->transaction(function () use ($model, &$body): array {
                 foreach ($body as $params) {
                     $res = self::createModel(clone $model, $params);
                     $result[] = $res;
                 }
+                return $result;
+            });
+        } else {
+            $ret = self::saveSeveral($model, $body, false);
+            if ($ret->current() === null) {
+                $result = $model->getDb()->transaction(function () use ($ret): int {
+                    return (int)$ret->current();
+                });
             } else {
-                $result = self::saveSeveral($model, $body, false);
+                $result = $ret->current();
             }
-            return is_array($result) ? $result : [$result];
-        });
+        }
+        return is_array($result) ? $result : [$result];
     }
 
     public static function update(BaseActiveRecord $model, array &$body, bool $onlyUpdate = false, array $when = null, bool $batch = true): array
     {
-        return $model->getDb()->transaction(function () use ($model, &$body, $onlyUpdate, $when, $batch): array {
-            if (($body['edit'] ?? false) && $body['edit']) {
-                [$edit, $where] = $body['edit'];
-                $result = $model->updateAll($edit, DBHelper::Search((new Query()), $where)->where);
-                if ($result === false) {
-                    throw new Exception('Failed to update the object for unknown reason.');
-                }
-            } else {
-                if (!ArrayHelper::isIndexed($body)) {
-                    $body = [$body];
-                }
-                if ($onlyUpdate) {
-                    $result = self::updateSeveral($model, $body, $when);
-                } elseif (!$batch) {
+        if (($body['edit'] ?? false) && $body['edit']) {
+            [$edit, $where] = $body['edit'];
+            $result = $model->updateAll($edit, DBHelper::Search((new Query()), $where)->where);
+            if ($result === false) {
+                throw new Exception('Failed to update the object for unknown reason.');
+            }
+        } else {
+            if (!ArrayHelper::isIndexed($body)) {
+                $body = [$body];
+            }
+            if ($onlyUpdate) {
+                $result = self::updateSeveral($model, $body, $when);
+            } elseif (!$batch) {
+                $exists = self::findExists($model, $body);
+                $result = $model->getDb()->transaction(function () use ($model, &$body, &$exists): array {
                     $result = [];
-                    $exists = self::findExists($model, $body);
                     foreach ($body as $params) {
                         $res = self::updateModel(clone $model, $params, self::checkExist($params, $exists, $model->primaryKey()));
                         $result[] = $res;
                     }
+                    return $result;
+                });
+            } else {
+                $ret = self::saveSeveral($model, $body, exclude: $when ?? []);
+                if ($ret->current() === null) {
+                    $result = $model->getDb()->transaction(function () use ($ret): int {
+                        $ret->next();
+                        return (int)$ret->current();
+                    });
                 } else {
-                    $result = self::saveSeveral($model, $body, exclude: $when ?? []);
+                    $result = $ret->current();
                 }
             }
-            return is_array($result) ? $result : [$result];
-        });
+        }
+        return is_array($result) ? $result : [$result];
     }
 
     public static function delete(BaseActiveRecord $model, array &$body): int
