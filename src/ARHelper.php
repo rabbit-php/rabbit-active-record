@@ -309,8 +309,8 @@ class ARHelper
             $body = [$body];
         }
         if (!$batch) {
-            $result = [];
             $result = $model->getDb()->transaction(function () use ($model, &$body): array {
+                $result = [];
                 foreach ($body as $params) {
                     $res = self::createModel(clone $model, $params);
                     $result[] = $res;
