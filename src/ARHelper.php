@@ -319,12 +319,11 @@ class ARHelper
             });
         } else {
             $ret = self::saveSeveral($model, $body, false);
-            if ($ret->current() === null) {
+            if (null === $result = $ret->current()) {
                 $result = $model->getDb()->transaction(function () use ($ret): int {
+                    $ret->next();
                     return (int)$ret->current();
                 });
-            } else {
-                $result = $ret->current();
             }
             $ret->next();
         }
@@ -357,13 +356,11 @@ class ARHelper
                 });
             } else {
                 $ret = self::saveSeveral($model, $body, exclude: $when ?? []);
-                if ($ret->current() === null) {
+                if (null === $result = $ret->current()) {
                     $result = $model->getDb()->transaction(function () use ($ret): int {
                         $ret->next();
                         return (int)$ret->current();
                     });
-                } else {
-                    $result = $ret->current();
                 }
                 $ret->next();
             }
