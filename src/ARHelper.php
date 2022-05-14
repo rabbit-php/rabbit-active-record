@@ -14,13 +14,14 @@ use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Core\UserException;
 use Rabbit\Base\Exception\InvalidArgumentException;
 use Rabbit\Base\Helper\ArrayHelper;
-use Rabbit\Pool\ConnectionInterface;
 
 class ARHelper
 {
     const INSERT_REPLACE = 'REPLACE';
     const INSERT_DEFAULT = 'INSERT';
     const INSERT_IGNORE = 'INSERT IGNORE';
+
+    const DEFAULT_DB = 'default';
 
     public static function typeInsert(BaseActiveRecord $model, array &$arrayColumns, string $insertType = self::INSERT_DEFAULT): int
     {
@@ -531,10 +532,5 @@ class ARHelper
                 }
         }
         return null;
-    }
-
-    public static function getModel(string $table, string|ConnectionInterface $db): BaseActiveRecord
-    {
-        return BaseRecord::build($table, $db);
     }
 }
