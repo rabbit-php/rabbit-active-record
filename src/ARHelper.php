@@ -31,9 +31,6 @@ class ARHelper
         $sql = '';
         $params = [];
         $i = 0;
-        if (!ArrayHelper::isIndexed($arrayColumns)) {
-            $arrayColumns = [$arrayColumns];
-        }
         $keys = $model->primaryKey();
 
         $schema = $conn->getSchema();
@@ -90,18 +87,28 @@ class ARHelper
         return $conn->createCommand($sql, $params)->execute();
     }
 
-    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true, array $exclude = []): Generator
+    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true, array $exclude = []): int
     {
         if (empty($arrayColumns)) {
             return 0;
         }
+        $ret = self::saveYield($model, $arrayColumns, $withUpdate, $exclude);
+        if (null === $result = $ret->current()) {
+            $result = $model->getDb()->transaction(function () use ($ret): int {
+                $ret->next();
+                return (int)$ret->current();
+            });
+        }
+        $ret->next();
+        return $result;
+    }
+
+    private static function saveYield(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true, array $exclude = []): Generator
+    {
         $conn = $model->getDb();
         $sql = '';
         $params = [];
         $i = 0;
-        if (!ArrayHelper::isIndexed($arrayColumns)) {
-            $arrayColumns = [$arrayColumns];
-        }
         $keys = $model->primaryKey();
 
         $schema = $conn->getSchema();
@@ -198,9 +205,6 @@ class ARHelper
             return 0;
         }
         $updateSql = '';
-        if (!ArrayHelper::isIndexed($arrayColumns)) {
-            $arrayColumns = [$arrayColumns];
-        }
         $firstRow = current($arrayColumns);
         $updateColumn = array_keys($firstRow);
         $conn = $model->getDb();
@@ -275,9 +279,6 @@ class ARHelper
         $result = false;
         $keys = $model->primaryKey();
         $condition = [];
-        if (!ArrayHelper::isIndexed($arrayColumns)) {
-            $arrayColumns = [$arrayColumns];
-        }
         foreach ($arrayColumns as $item) {
             $model->load($item, '');
             $model->isNewRecord = false;
@@ -318,14 +319,7 @@ class ARHelper
                 return $result;
             });
         } else {
-            $ret = self::saveSeveral($model, $body, false);
-            if (null === $result = $ret->current()) {
-                $result = $model->getDb()->transaction(function () use ($ret): int {
-                    $ret->next();
-                    return (int)$ret->current();
-                });
-            }
-            $ret->next();
+            $result = self::saveSeveral($model, $body, false);
         }
         return is_array($result) ? $result : [$result];
     }
@@ -355,14 +349,7 @@ class ARHelper
                     return $result;
                 });
             } else {
-                $ret = self::saveSeveral($model, $body, exclude: $when ?? []);
-                if (null === $result = $ret->current()) {
-                    $result = $model->getDb()->transaction(function () use ($ret): int {
-                        $ret->next();
-                        return (int)$ret->current();
-                    });
-                }
-                $ret->next();
+                $result = self::saveSeveral($model, $body, exclude: $when ?? []);
             }
         }
         return is_array($result) ? $result : [$result];
@@ -548,13 +535,6 @@ class ARHelper
 
     public static function getModel(string $table, string|ConnectionInterface $db): BaseActiveRecord
     {
-        return new class($table, $db) extends ActiveRecord
-        {
-            public function __construct(string $tableName, string|ConnectionInterface $dbName)
-            {
-                $this->tableName = $tableName;
-                $this->db = is_string($dbName) ? service('db')->get($dbName) : $dbName;
-            }
-        };
+        return BaseRecord::build($table, $db);
     }
 }
