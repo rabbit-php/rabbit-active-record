@@ -54,11 +54,12 @@ class ARHelper
                     }
                 }
             }
+            ksort($item);
             foreach ($item as $name => $value) {
                 if (!($columnSchemas[$name] ?? false)) {
                     continue;
                 }
-                if (!$i) {
+                if ($i === 0) {
                     $names[] = $conn->quoteColumnName($name);
                 }
                 $value =  $columnSchemas[$name]->dbTypecast($value);
@@ -75,7 +76,7 @@ class ARHelper
                     $params[] = $value;
                 }
             }
-            if (!$i) {
+            if ($i === 0) {
                 $sql = $insertType . ' INTO ' . $conn->quoteTableName($table->tableName())
                     . ' (' . implode(', ', $names) . ') VALUES ('
                     . implode(', ', $placeholders) . ')';
@@ -138,6 +139,7 @@ class ARHelper
                     }
                 }
             }
+            ksort($item);
             //关联模型
             foreach ($model->getRelations() as $child => [$key, $val, $delete]) {
                 if ($item[$key] ?? false) {
@@ -165,7 +167,7 @@ class ARHelper
                 if (!($columnSchemas[$name] ?? false)) {
                     continue;
                 }
-                if (!$i) {
+                if ($i === 0) {
                     $names[] = $conn->quoteColumnName($name);
                     $withUpdate && !in_array($name, $keys ?? []) && !in_array($name, $exclude) && ($updates[] = $conn->quoteColumnName($name) . "=values(" . $conn->quoteColumnName($name) . ")");
                 }
@@ -183,7 +185,7 @@ class ARHelper
                     $params[] = $value;
                 }
             }
-            if (!$i) {
+            if ($i === 0) {
                 $sql = 'INSERT INTO ' . $conn->quoteTableName($table->tableName())
                     . ' (' . implode(', ', $names) . ') VALUES ('
                     . implode(', ', $placeholders) . ')';
