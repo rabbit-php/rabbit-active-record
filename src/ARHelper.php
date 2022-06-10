@@ -54,7 +54,6 @@ class ARHelper
                     }
                 }
             }
-            ksort($item);
             foreach ($item as $name => $value) {
                 if (!($columnSchemas[$name] ?? false)) {
                     continue;
@@ -88,17 +87,22 @@ class ARHelper
         return $conn->createCommand($sql, $params)->execute();
     }
 
-    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true, array $exclude = []): int
+    public static function saveSeveral(BaseActiveRecord $model, array &$arrayColumns, bool $withUpdate = true, array $exclude = [], bool $trans = true): int
     {
         if (empty($arrayColumns)) {
             return 0;
         }
         $ret = self::saveYield($model, $arrayColumns, $withUpdate, $exclude);
         if (null === $result = $ret->current()) {
-            $result = $model->getDb()->transaction(function () use ($ret): int {
+            if ($trans) {
+                $result = $model->getDb()->transaction(function () use ($ret): int {
+                    $ret->next();
+                    return (int)$ret->current();
+                });
+            } else {
                 $ret->next();
-                return (int)$ret->current();
-            });
+                $result = (int)$ret->current();
+            }
         }
         $ret->next();
         return $result;
@@ -134,7 +138,6 @@ class ARHelper
                     }
                 }
             }
-            ksort($item);
             //关联模型
             foreach ($model->getRelations() as $child => [$key, $val, $delete]) {
                 if ($item[$key] ?? false) {
@@ -194,7 +197,7 @@ class ARHelper
             yield;
             foreach ($childs as $child => $items) {
                 $child_model = new $child();
-                self::saveSeveral($child_model, $items);
+                self::saveSeveral($child_model, $items, trans: false);
             }
         }
         yield $conn->createCommand($sql, $params)->execute();
