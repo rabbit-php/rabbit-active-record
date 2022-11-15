@@ -188,7 +188,7 @@ class ActiveRecord extends BaseActiveRecord
     public function insert(bool $runValidation = true, array $attributes = null): bool
     {
         if ($runValidation && !$this->validate($attributes)) {
-            App::info('Model not inserted due to validation error.', 'db');
+            App::info('Model not inserted due to validation error.');
             return false;
         }
 
@@ -231,7 +231,7 @@ class ActiveRecord extends BaseActiveRecord
     public function update(bool $runValidation = true, array $attributeNames = null): int
     {
         if ($runValidation && !$this->validate($attributeNames)) {
-            App::info('Model not updated due to validation error.', 'db');
+            App::info('Model not updated due to validation error.');
             return 0;
         }
 
